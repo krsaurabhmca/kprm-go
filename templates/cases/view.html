@@ -1,0 +1,110 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="h3 fw-bold text-dark mb-0">Case #{{ .Case.ID }}</h1>
+                {{ if eq .Case.OverallStatus "Positive" }}
+                    <span class="badge badge-success"><i class="bi bi-check-circle me-1"></i>Positive</span>
+                {{ else if eq .Case.OverallStatus "Negative" }}
+                    <span class="badge badge-danger"><i class="bi bi-x-circle me-1"></i>Negative</span>
+                {{ else if eq .Case.OverallStatus "CNV" }}
+                    <span class="badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>CNV</span>
+                {{ else }}
+                    <span class="badge badge-secondary">Pending</span>
+                {{ end }}
+                {{ if eq .Case.IsClosed 1 }}
+                    <span class="badge bg-dark px-2 py-1"><i class="bi bi-lock me-1"></i>Closed</span>
+                {{ end }}
+            </div>
+            <p class="text-secondary small mb-0 mt-1">Client: <strong>{{ .Case.ClientName }}</strong> &bull; Structure: <strong>{{ .Case.StructureName }}</strong> &bull; Ingested: {{ .CreatedAt }} &bull; TAT: {{ .TAT }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-info text-white shadow-sm" onclick="openCaseStageModal({{ .Case.ID }})">
+                <i class="bi bi-eye me-1"></i> Stage Audit
+            </button>
+            <a href="/reports/generate?case_id={{ .Case.ID }}" class="btn btn-sm btn-primary shadow-sm" target="_blank">
+                <i class="bi bi-printer me-1"></i> Print / PDF Report
+            </a>
+            <a href="/reports/generate?case_id={{ .Case.ID }}&type=excel" class="btn btn-sm btn-success shadow-sm">
+                <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+            </a>
+            {{ if ne .Case.IsClosed 1 }}
+            <form action="/cases/{{ .Case.ID }}/close" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to mark this case as Closed?');">
+                <button type="submit" class="btn btn-sm btn-dark">
+                    <i class="bi bi-check2-circle me-1"></i> Close Case
+                </button>
+            </form>
+            {{ end }}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Dynamic Case Data Fields -->
+        <div class="col-12 col-lg-5">
+            <div class="card bg-white">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="bi bi-card-list me-2 text-primary"></i> Case Parameters</h5>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0 fs-13 styled-table">
+                        <tbody>
+                            {{ range .DynamicData }}
+                            <tr>
+                                <th class="table-light text-secondary fw-semibold ps-3" style="width: 40%;">{{ .DisplayName }}</th>
+                                <td class="ps-3 fw-semibold text-dark">{{ if .Value }}{{ .Value }}{{ else }}-{{ end }}</td>
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="2" class="text-center py-3 text-muted">No dynamic attributes recorded.</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Constituent Verification Tasks -->
+        <div class="col-12 col-lg-7">
+            <div class="card bg-white">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="bi bi-list-task me-2 text-primary"></i> Verification Tasks</h5>
+                    <a href="/tasks?case_id={{ .Case.ID }}" class="btn btn-sm btn-secondary">Assign / Manage</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Task Name</th>
+                                <th>Type</th>
+                                <th>Verifier</th>
+                                <th class="text-center">Status</th>
+                                <th>Observation Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Tasks }}
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">{{ .TaskName }}</td>
+                                <td><span class="badge badge-secondary">{{ .TaskType }}</span></td>
+                                <td class="text-secondary"><i class="bi bi-person me-1"></i>{{ .VerifierName }}</td>
+                                <td class="text-center">{{ .StatusBadge }}</td>
+                                <td class="text-muted small" style="white-space: pre-line;">{{ if .Remarks }}{{ .Remarks }}{{ else }}-{{ end }}</td>
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted fst-italic">No verification tasks linked to this case.</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}

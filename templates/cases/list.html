@@ -1,0 +1,124 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">Case Management</h1>
+            <p class="text-secondary small mb-0">Browse, filter, and track case lifecycle across clients</p>
+        </div>
+        <div>
+            <a href="/cases/new" class="btn btn-primary btn-sm px-3 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> Ingest New Case
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card mb-4">
+        <form action="/cases" method="GET" class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search Case ID, Applicant, Ref No..." value="{{ .Search }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">-- All Statuses --</option>
+                    <option value="Positive" {{ if eq .StatusFilter "Positive" }}selected{{ end }}>Positive</option>
+                    <option value="Negative" {{ if eq .StatusFilter "Negative" }}selected{{ end }}>Negative</option>
+                    <option value="CNV" {{ if eq .StatusFilter "CNV" }}selected{{ end }}>CNV</option>
+                    <option value="Pending" {{ if eq .StatusFilter "Pending" }}selected{{ end }}>Pending</option>
+                    <option value="Closed" {{ if eq .StatusFilter "Closed" }}selected{{ end }}>Closed Cases</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="bi bi-funnel me-1"></i> Apply Filter</button>
+            </div>
+            <div class="col-12 col-md-2 text-md-end text-muted fs-12">
+                Total: <strong>{{ .TotalCases }}</strong> cases
+            </div>
+        </form>
+    </div>
+
+    <!-- Cases Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                <thead>
+                    <tr>
+                        <th class="ps-3" style="width: 70px;">Case #</th>
+                        <th>Client</th>
+                        <th>Structure</th>
+                        <th>Applicant Particulars</th>
+                        <th>Client Ref. No</th>
+                        <th class="text-center">Task Progress</th>
+                        <th class="text-center">Overall Stage</th>
+                        <th class="text-center">TAT</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Cases }}
+                    <tr>
+                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
+                        <td class="fw-semibold text-dark">{{ .ClientName }}</td>
+                        <td class="text-muted">{{ .StructureName }}</td>
+                        <td class="fw-semibold">{{ .ApplicantName }}</td>
+                        <td class="font-monospace text-secondary">{{ if .ClientRefNo }}{{ .ClientRefNo }}{{ else }}-{{ end }}</td>
+                        <td class="text-center">
+                            <span class="badge badge-secondary font-monospace">
+                                {{ .CompletedTasks }} / {{ .TotalTasks }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            {{ if eq .IsClosed 1 }}
+                                <span class="badge bg-dark px-2 py-1"><i class="bi bi-lock me-1"></i>Closed</span>
+                            {{ else if eq .OverallStatus "Positive" }}
+                                <span class="badge badge-success"><i class="bi bi-check-circle me-1"></i>Positive</span>
+                            {{ else if eq .OverallStatus "Negative" }}
+                                <span class="badge badge-danger"><i class="bi bi-x-circle me-1"></i>Negative</span>
+                            {{ else if eq .OverallStatus "CNV" }}
+                                <span class="badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>CNV</span>
+                            {{ else }}
+                                <span class="badge badge-secondary">Pending</span>
+                            {{ end }}
+                        </td>
+                        <td class="text-center font-monospace text-muted">{{ .TAT }}</td>
+                        <td class="text-end pe-3">
+                            <button type="button" class="btn btn-sm btn-secondary me-1" onclick="openCaseStageModal({{ .ID }})" title="View Lifecycle Stage">
+                                <i class="bi bi-eye"></i> Stage
+                            </button>
+                            <a href="/cases/view?id={{ .ID }}" class="btn btn-sm btn-primary me-1" title="Case Details">
+                                <i class="bi bi-folder2"></i> View
+                            </a>
+                            <a href="/reports/generate?case_id={{ .ID }}&type=excel" class="btn btn-sm btn-success" title="Download Excel MIS">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted fst-italic">No cases found matching criteria.</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {{ if gt .TotalPages 1 }}
+        <div class="card-footer bg-transparent p-3 d-flex justify-content-between align-items-center">
+            <span class="text-muted fs-12">Page {{ .CurrentPage }} of {{ .TotalPages }}</span>
+            <div class="btn-group btn-group-sm">
+                {{ if gt .CurrentPage 1 }}
+                    <a href="/cases?page={{ sub .CurrentPage 1 }}&status={{ .StatusFilter }}&search={{ .Search }}" class="btn btn-secondary">Previous</a>
+                {{ end }}
+                <a href="/cases?page={{ add .CurrentPage 1 }}&status={{ .StatusFilter }}&search={{ .Search }}" class="btn btn-secondary">Next</a>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+</div>
+
+{{ template "footer.html" . }}

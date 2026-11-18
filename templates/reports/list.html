@@ -1,0 +1,76 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">Reports &amp; MIS Generation Center</h1>
+            <p class="text-secondary small mb-0">Generate print-ready investigation reports, audit matrices, and styled Excel MIS exports</p>
+        </div>
+    </div>
+
+    <!-- Quick Report Generator Card -->
+    <div class="card p-4 mb-4">
+        <h5 class="card-title mb-3"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i> On-Demand Case Report Generator</h5>
+        <form action="/reports/generate" method="GET" class="row g-3 align-items-end" target="_blank">
+            <div class="col-12 col-md-4">
+                <label class="form-label fs-13 fw-semibold text-secondary">Enter Case ID <span class="text-danger">*</span></label>
+                <input type="number" name="case_id" class="form-control" placeholder="e.g. 25" required>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label fs-13 fw-semibold text-secondary">Output Format</label>
+                <select name="type" class="form-select">
+                    <option value="html">Print-Ready HTML / PDF View</option>
+                    <option value="excel">Styled Excel MIS (.xlsx)</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <i class="bi bi-download me-1"></i> Generate &amp; Export
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Client Directory for bulk reporting -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title"><i class="bi bi-building me-2 text-primary"></i> Client-Level Automated Reporting</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Client</th>
+                        <th class="text-center">Automated Email Dispatch</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Clients }}
+                    <tr>
+                        <td class="ps-3 fw-bold text-dark">{{ .Name }}</td>
+                        <td class="text-center">
+                            {{ if eq .EmailReportingEnabled 1 }}
+                                <span class="badge badge-success"><i class="bi bi-check-circle me-1"></i>Active</span>
+                            {{ else }}
+                                <span class="badge badge-secondary">Disabled</span>
+                            {{ end }}
+                        </td>
+                        <td class="text-end pe-3">
+                            <a href="/cases?status=Positive" class="btn btn-sm btn-secondary">
+                                <i class="bi bi-folder2 me-1"></i> View Resolved Cases
+                            </a>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted fst-italic">No clients found.</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}

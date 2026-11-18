@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | KPRM2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --primary-glow: rgba(79, 70, 229, 0.25);
+            --dark-bg: #090d16;
+            --dark-card: #0f172a;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --border-subtle: #e2e8f0;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body.auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            background-image:
+                radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
+                radial-gradient(rgba(148, 163, 184, 0.18) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 28px 28px;
+            padding: 1.5rem;
+            color: var(--text-body);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .ambient-glow-1 {
+            position: fixed;
+            top: -150px;
+            right: -150px;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .ambient-glow-2 {
+            position: fixed;
+            bottom: -150px;
+            left: -150px;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%);
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .auth-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 980px;
+            margin: auto;
+        }
+
+        .auth-container {
+            display: grid;
+            grid-template-columns: 1.12fr 0.88fr;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: var(--radius-xl);
+            box-shadow:
+                0 25px 60px -15px rgba(15, 23, 42, 0.12),
+                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+            overflow: hidden;
+        }
+
+        .showcase-panel {
+            background: linear-gradient(150deg, #090d16 0%, #111a2e 50%, #0d1527 100%);
+            color: #f8fafc;
+            padding: 3.25rem 2.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .showcase-panel::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -30%;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, transparent 70%);
+            filter: blur(40px);
+            pointer-events: none;
+        }
+
+        .showcase-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -20%;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+            filter: blur(40px);
+            pointer-events: none;
+        }
+
+        .showcase-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-badge-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366f1, #4338ca);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .brand-meta-pill {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #818cf8;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .showcase-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #ffffff;
+            margin-bottom: 0.65rem;
+            line-height: 1.2;
+        }
+
+        .showcase-title span {
+            background: linear-gradient(135deg, #a5b4fc 0%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .showcase-desc {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 2.25rem;
+            max-width: 40ch;
+        }
+
+        .feature-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .feature-card {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateX(4px);
+        }
+
+        .feature-card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.18);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-card-info h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 0.15rem;
+        }
+
+        .feature-card-info p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .showcase-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #64748b;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 1;
+        }
+
+        .system-pulse {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .pulse-beacon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+            animation: beaconPulse 2s infinite;
+        }
+
+        @keyframes beaconPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .form-panel {
+            padding: 3.25rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--primary);
+            display: inline-block;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-title {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: var(--text-heading);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.35rem;
+        }
+
+        .form-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .alert-box {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-box--danger {
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            color: #991b1b;
+        }
+
+        .alert-box--success {
+            background: #f0fdf4;
+            border: 1px solid #dcfce7;
+            color: #166534;
+        }
+
+        .input-block {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-heading);
+            margin-bottom: 0.45rem;
+        }
+
+        .field-shell {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .field-icon {
+            position: absolute;
+            left: 0.95rem;
+            color: #94a3b8;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .field-input {
+            width: 100%;
+            height: 44px;
+            padding: 0 2.65rem 0 2.65rem;
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--text-heading);
+            background: #f8fafc;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .field-input:focus {
+            background: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        .field-shell:focus-within .field-icon {
+            color: var(--primary);
+        }
+
+        .btn-eye-toggle {
+            position: absolute;
+            right: 0.5rem;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .btn-eye-toggle:hover {
+            color: var(--text-heading);
+        }
+
+        .form-extra-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0.75rem 0 1.5rem;
+            font-size: 0.82rem;
+        }
+
+        .remember-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+            color: var(--text-body);
+            font-weight: 500;
+        }
+
+        .remember-wrap input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .btn-login-cta {
+            width: 100%;
+            height: 46px;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.92rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-login-cta:hover {
+            background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+            box-shadow: 0 8px 22px rgba(79, 70, 229, 0.45);
+            transform: translateY(-1.5px);
+        }
+
+        .security-badge-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            margin-top: 1.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        @media (max-width: 840px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+            }
+
+            .showcase-panel {
+                padding: 2.25rem 1.75rem;
+            }
+
+            .form-panel {
+                padding: 2.25rem 1.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+    <div class="ambient-glow-1"></div>
+    <div class="ambient-glow-2"></div>
+
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <!-- Left Showcase Panel -->
+            <div class="showcase-panel">
+                <div class="showcase-content">
+                    <div class="brand-badge-row">
+                        <div class="brand-icon-box">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                        </div>
+                        <span class="brand-meta-pill">KPRM Solutions</span>
+                    </div>
+
+                    <h1 class="showcase-title"><span>KPRM2</span> Operations</h1>
+                    <p class="showcase-desc">Background Verification &amp; Case Management Platform (Go Edition)</p>
+
+                    <div class="feature-stack">
+                        <div class="feature-card">
+                            <div class="feature-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                            <div class="feature-card-info">
+                                <h4>Granular Role Governance</h4>
+                                <p>Strict RBAC routing for Verifiers, Reviewers, and System Administrators.</p>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="feature-card-info">
+                                <h4>Task Verification Lifecycle</h4>
+                                <p>Multi-tier validation flow with attachments, stamps, and live audit logs.</p>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-card-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div class="feature-card-info">
+                                <h4>Automated Report Synthesis</h4>
+                                <p>Dynamic custom formula calculations with print-ready A4 &amp; Excel exports.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showcase-footer">
+                    <div class="system-pulse">
+                        <span class="pulse-beacon"></span>
+                        Platform Online
+                    </div>
+                    <span>Enterprise Go v2.0 • 256-bit SSL</span>
+                </div>
+            </div>
+
+            <!-- Right Login Form -->
+            <div class="form-panel">
+                <div class="form-header">
+                    <span class="form-eyebrow">Authorized Workspace</span>
+                    <h2 class="form-title">Account Sign In</h2>
+                    <p class="form-subtitle">Enter your system credentials to access your administrative dashboard.</p>
+                </div>
+
+                {{ if .Error }}
+                <div class="alert-box alert-box--danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="flex-shrink:0;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>{{ .Error }}</span>
+                </div>
+                {{ end }}
+
+                {{ if .Success }}
+                <div class="alert-box alert-box--success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="flex-shrink:0;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <span>{{ .Success }}</span>
+                </div>
+                {{ end }}
+
+                <form action="/login" method="POST" id="authLoginForm">
+                    <input type="hidden" name="action" value="login">
+
+                    <!-- Username -->
+                    <div class="input-block">
+                        <label for="inputUsername" class="input-label">
+                            <span>Username</span>
+                        </label>
+                        <div class="field-shell">
+                            <span class="field-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </span>
+                            <input type="text" id="inputUsername" name="username" class="field-input"
+                                placeholder="Enter username" autocomplete="username" autofocus required>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-block">
+                        <label for="inputPassword" class="input-label">
+                            <span>Password</span>
+                        </label>
+                        <div class="field-shell">
+                            <span class="field-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                            </span>
+                            <input type="password" id="inputPassword" name="password" class="field-input"
+                                placeholder="••••••••" autocomplete="current-password" required>
+                            <button type="button" class="btn-eye-toggle" onclick="togglePasswordVisibility()"
+                                aria-label="Toggle password view" title="Toggle password visibility">
+                                <svg id="eyeSvg" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Options Row -->
+                    <div class="form-extra-row">
+                        <label class="remember-wrap">
+                            <input type="checkbox" id="rememberCheckbox">
+                            <span>Remember username</span>
+                        </label>
+                        <a href="/register" style="color:var(--primary); text-decoration:none; font-weight:600;">Create
+                            Account</a>
+                    </div>
+
+                    <!-- Submit CTA -->
+                    <button type="submit" id="authSubmitBtn" class="btn-login-cta">
+                        <span id="btnLabel">Sign In to Dashboard</span>
+                        <svg id="btnArrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="security-badge-footer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="color:#10b981;">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>© 2026 KPRM2. All rights reserved.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('inputPassword');
+            const eyeSvg = document.getElementById('eyeSvg');
+            if (!pwdInput || !eyeSvg) return;
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                eyeSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                pwdInput.type = 'password';
+                eyeSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        }
+    </script>
+</body>
+
+</html>

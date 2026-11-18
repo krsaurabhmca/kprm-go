@@ -1,0 +1,113 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">System Architecture &amp; Documentation</h1>
+            <p class="text-secondary small mb-0">Overview of KPRM2 Background Verification &amp; Case Management Platform (Go Version)</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm bg-white p-4 mb-4">
+                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-cpu text-primary me-2"></i> High Performance Go Engine</h4>
+                <p class="text-secondary">
+                    This standalone Go implementation of KPRM2 provides native speed, memory efficiency, concurrent goroutine request handling, and strict type safety while preserving 100% interoperability with the existing MySQL database, uploaded assets, and frontend UI templates.
+                </p>
+                <div class="row g-3 mt-2">
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i> Two-Way Bcrypt Auth</h6>
+                            <p class="small text-muted mb-0">Transparently verifies PHP <code>$2y$</code> password hashes and produces compatible hashes for both systems.</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-file-earmark-excel text-success me-1"></i> Native Excel MIS Export</h6>
+                            <p class="small text-muted mb-0">Streams styled, dark-bordered Excel spreadsheets using Excelize with zero external runtime dependencies.</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-whatsapp text-success me-1"></i> WhatsApp Suite</h6>
+                            <p class="small text-muted mb-0">Direct GreenAPI integration with phone masking, multi-instance switching, QR scanner, and automated event triggers.</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 bg-light rounded border">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-table text-primary me-1"></i> Financial Matrix Engine</h6>
+                            <p class="small text-muted mb-0">10-parameter comparative audit with Indian currency notation (₹ 10,00,000) and automated variance calculation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm bg-white p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-3 text-info me-2"></i> RESTful &amp; Inbound Webhook Endpoints</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm fs-13 mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Method</th>
+                                <th>Endpoint URL</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge bg-primary">GET</span></td>
+                                <td><code>/api/get_task_form.php</code></td>
+                                <td>Fetches dynamic field blueprint for task modal.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-primary">GET</span></td>
+                                <td><code>/api/get_task_remarks.php</code></td>
+                                <td>Fetches observation remarks with token substitution.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-success">POST</span></td>
+                                <td><code>/api_task_update.php</code></td>
+                                <td>Inbound webhook for external partner updates.</td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-info text-dark">GET/POST</span></td>
+                                <td><code>/api/whatsapp_chat_api.php</code></td>
+                                <td>GreenAPI messaging, chat history, QR codes.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm bg-white p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-badge text-warning me-2"></i> User Roles &amp; RBAC</h5>
+                <div class="list-group list-group-flush fs-13">
+                    <div class="list-group-item px-0 py-2">
+                        <strong>DEV:</strong> Full unrestricted root access.
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <strong>Admin:</strong> Operational &amp; configuration access.
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <strong>Manager:</strong> Case workflows &amp; reviews.
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <strong>BEO:</strong> Case ingestion &amp; assignments.
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <strong>Verifier:</strong> Field verification data entry only.
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <strong>Reviewer:</strong> Quality audit &amp; remarks finalization.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}
+

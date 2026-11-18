@@ -1,0 +1,50 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">Task Report Formats</h1>
+            <p class="text-secondary small mb-0">Manage predefined column sets for task tables in client reports</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm bg-white">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 fs-13">
+                <thead class="table-light text-uppercase fw-semibold text-secondary" style="font-size: 11px;">
+                    <tr>
+                        <th class="ps-3" style="width: 70px;">ID</th>
+                        <th>Format Name</th>
+                        <th>Description</th>
+                        <th>Columns JSON</th>
+                        <th class="text-center">System Template</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Formats }}
+                    <tr>
+                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
+                        <td class="fw-bold text-dark">{{ .Name }}</td>
+                        <td class="text-muted">{{ if .Description.Valid }}{{ .Description.String }}{{ else }}-{{ end }}</td>
+                        <td class="font-monospace text-secondary fs-11">{{ .ColumnsJSON }}</td>
+                        <td class="text-center">
+                            {{ if eq .IsSystem 1 }}
+                                <span class="badge bg-primary-subtle text-primary">System Default</span>
+                            {{ else }}
+                                <span class="badge bg-light text-muted border">Custom</span>
+                            {{ end }}
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted fst-italic">No formats registered.</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}
+

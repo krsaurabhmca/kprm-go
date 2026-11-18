@@ -1,0 +1,64 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card p-4">
+                <div class="text-center mb-4">
+                    <div class="rounded-circle d-inline-flex p-3 bg-primary-subtle text-primary mb-2">
+                        <i class="bi bi-folder-plus fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-1">New Case Ingestion</h3>
+                    <p class="text-secondary small mb-0">Step 1: Choose client and structure blueprint</p>
+                </div>
+
+                <form action="/cases/form" method="GET">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Target Client <span class="text-danger">*</span></label>
+                        <select name="client_id" id="clientSelect" class="form-select" required onchange="filterStructures()">
+                            <option value="">-- Choose Client --</option>
+                            {{ range .Clients }}
+                                <option value="{{ .ID }}">{{ .Name }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Form Schema / Structure <span class="text-danger">*</span></label>
+                        <select name="structure_id" id="structureSelect" class="form-select" required>
+                            <option value="">-- Choose Structure --</option>
+                            {{ range .Structures }}
+                                <option value="{{ .ID }}" data-client="{{ .ClientID }}">{{ .StructureName }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        Continue to Data Entry <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterStructures() {
+    const clientId = document.getElementById('clientSelect').value;
+    const structureSelect = document.getElementById('structureSelect');
+    const options = structureSelect.querySelectorAll('option');
+
+    structureSelect.value = '';
+    options.forEach(opt => {
+        if (!opt.value) return;
+        const optClient = opt.getAttribute('data-client');
+        if (!clientId || optClient === clientId) {
+            opt.style.display = 'block';
+        } else {
+            opt.style.display = 'none';
+        }
+    });
+}
+</script>
+
+{{ template "footer.html" . }}

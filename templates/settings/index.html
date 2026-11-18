@@ -1,0 +1,152 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">System Settings &amp; DEV Utilities</h1>
+            <p class="text-secondary small mb-0">Configure external partner APIs, inspect upload assets, and audit webhook telemetry</p>
+        </div>
+    </div>
+
+    <!-- Settings Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4 border-bottom">
+        <li class="nav-item">
+            <a class="nav-link {{ if eq .ActiveTab "external_apis" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=external_apis">
+                <i class="bi bi-cloud-arrow-up me-1"></i> External APIs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ if eq .ActiveTab "api_diagnostics" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=api_diagnostics">
+                <i class="bi bi-activity me-1"></i> API Diagnostics &amp; Webhook Sandbox
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ if eq .ActiveTab "file_manager" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=file_manager">
+                <i class="bi bi-folder-check me-1"></i> Upload Assets Manager
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab 1: External APIs -->
+    {{ if eq .ActiveTab "external_apis" }}
+    <div class="card p-4" style="max-width: 800px;">
+        <h5 class="card-title mb-3"><i class="bi bi-gear-wide-connected text-primary me-2"></i> External Digital Verification Endpoints</h5>
+        <form action="/settings" method="POST">
+            <input type="hidden" name="tab" value="external_apis">
+            <div class="mb-3">
+                <label class="form-label fs-13 fw-semibold text-secondary">Banking Verification Endpoint URL (update_banking)</label>
+                <input type="url" name="api_banking_endpoint" class="form-control" placeholder="https://partner.api/v1/banking/verify" value="{{ index .Settings "api_banking_endpoint" }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fs-13 fw-semibold text-secondary">ITR / ITO Verification Endpoint URL (update_itr)</label>
+                <input type="url" name="api_itr_endpoint" class="form-control" placeholder="https://partner.api/v1/itr/verify" value="{{ index .Settings "api_itr_endpoint" }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fs-13 fw-semibold text-secondary">External API Partner Authorization Key</label>
+                <input type="text" name="api_partner_key" class="form-control" placeholder="Bearer ..." value="{{ index .Settings "api_partner_key" }}">
+            </div>
+            <div class="mb-4">
+                <label class="form-label fs-13 fw-semibold text-secondary">Auto-Dispatch on Task Creation</label>
+                <select name="api_auto_dispatch" class="form-select">
+                    <option value="1" {{ if eq (index .Settings "api_auto_dispatch") "1" }}selected{{ end }}>Enabled (Auto-dispatch tasks to external partner)</option>
+                    <option value="0" {{ if ne (index .Settings "api_auto_dispatch") "1" }}selected{{ end }}>Disabled (Manual trigger only)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary px-4 fw-semibold">Save Configuration</button>
+        </form>
+    </div>
+    {{ end }}
+
+    <!-- Tab 2: API Diagnostics & Webhook Sandbox -->
+    {{ if eq .ActiveTab "api_diagnostics" }}
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="card p-4">
+                <h5 class="card-title mb-3"><i class="bi bi-arrow-repeat text-success me-2"></i> Inbound Webhook Simulator</h5>
+                <p class="text-secondary small mb-3">Simulate an incoming callback from external verification partners to test automatic status resolution.</p>
+                <form action="/settings/diagnostics/callback" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Target Case Task ID <span class="text-danger">*</span></label>
+                        <input type="number" name="task_id" class="form-control" placeholder="e.g. 15" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Resolution Outcome</label>
+                        <select name="status" class="form-select">
+                            <option value="Positive">Positive</option>
+                            <option value="Negative">Negative</option>
+                            <option value="CNV">CNV</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Callback Remarks Narrative</label>
+                        <textarea name="remarks" class="form-control" rows="3">Verification confirmed authentic by automated partner API telemetry.</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                        <i class="bi bi-play-circle me-1"></i> Trigger Simulated Callback
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card p-4">
+                <h5 class="card-title mb-3"><i class="bi bi-info-circle text-primary me-2"></i> Inbound Webhook Specifications</h5>
+                <p class="text-secondary small">External partners can deliver asynchronous verification results to:</p>
+                <div class="p-2 bg-light rounded border font-monospace text-primary fs-12 mb-3">
+                    POST /api/task_callback<br>
+                    POST /api_task_update
+                </div>
+                <h6 class="fw-bold fs-13">Supported JSON Schema:</h6>
+                <pre class="p-3 bg-dark text-white rounded font-monospace fs-11">{
+  "task_id": 15,
+  "status": "Positive",
+  "remarks": "Bank account verified successfully.",
+  "attachment_url": "https://..."
+}</pre>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+
+    <!-- Tab 3: File Manager -->
+    {{ if eq .ActiveTab "file_manager" }}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title"><i class="bi bi-folder2-open me-2 text-primary"></i> Upload Storage Directory (uploads/)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Category</th>
+                        <th>File Name</th>
+                        <th class="text-center">File Size</th>
+                        <th>Last Modified</th>
+                        <th class="text-end pe-3">Preview</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Files }}
+                    <tr>
+                        <td class="ps-3"><span class="badge badge-secondary">{{ .Category }}</span></td>
+                        <td class="fw-semibold font-monospace text-dark">{{ .Name }}</td>
+                        <td class="text-center font-monospace text-muted">{{ .Size }}</td>
+                        <td class="text-muted font-monospace">{{ .ModTime }}</td>
+                        <td class="text-end pe-3">
+                            <a href="/file-viewer?file={{ .Path }}" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted fst-italic">No uploaded documents or logs.</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{ end }}
+</div>
+
+{{ template "footer.html" . }}

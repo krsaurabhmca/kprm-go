@@ -1,0 +1,18 @@
+# Binaries and executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Environment files
+.env
+.env.local
+
+# Build output
+/bin/
+/dist/
+

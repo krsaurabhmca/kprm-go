@@ -1,0 +1,62 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                    <div>
+                        <h3 class="fw-bold text-dark mb-1">Case Data Entry</h3>
+                        <p class="text-secondary small mb-0">Structure: <strong class="text-primary">{{ .StructureName
+                                }}</strong></p>
+                    </div>
+                    <a href="/cases/new" class="btn btn-sm btn-secondary">Change Structure</a>
+                </div>
+
+                <form action="/cases/new" method="POST">
+                    <input type="hidden" name="structure_id" value="{{ .StructureID }}">
+                    <input type="hidden" name="client_id" value="{{ .ClientID }}">
+
+                    <div class="row g-3">
+                        {{ range .Columns }}
+                        <div class="col-12 {{ if eq .DataType " textarea" }}col-12{{ else }}col-md-6{{ end }}">
+                            <label class="form-label fs-13 fw-semibold text-secondary">
+                                {{ .DisplayName }}
+                                {{ if eq .IsMandatory 1 }}<span class="text-danger">*</span>{{ end }}
+                            </label>
+
+                            {{ if eq .DataType "textarea" }}
+                            <textarea name="col_{{ .ID }}" class="form-control" rows="3" {{ if eq .IsMandatory 1
+                                }}required{{ end }}></textarea>
+                            {{ else if eq .DataType "dropdown" }}
+                            <select name="col_{{ .ID }}" class="form-select" {{ if eq .IsMandatory 1 }}required{{ end
+                                }}>
+                                <option value="">-- Select --</option>
+                            </select>
+                            {{ else if eq .DataType "date" }}
+                            <input type="date" name="col_{{ .ID }}" class="form-control" {{ if eq .IsMandatory 1
+                                }}required{{ end }}>
+                            {{ else }}
+                            <input type="text" name="col_{{ .ID }}" class="form-control"
+                                placeholder="Enter {{ .DisplayName }}" {{ if eq .IsMandatory 1 }}required{{ end }}>
+                            {{ end }}
+                        </div>
+                        {{ else }}
+                        <div class="col-12 text-center py-4 text-muted">No dynamic schema columns defined for this
+                            structure.</div>
+                        {{ end }}
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top text-end">
+                        <a href="/cases/new" class="btn btn-secondary px-4 me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                            <i class="bi bi-check-lg me-1"></i> Save &amp; Create Case
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}

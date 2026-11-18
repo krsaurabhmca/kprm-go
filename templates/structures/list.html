@@ -1,0 +1,87 @@
+{{ template "header.html" . }}
+
+<div class="content-body p-4 wizard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">Dynamic Client Structures</h1>
+            <p class="text-secondary small mb-0">Build customized case ingestion schemas with granular fields &amp; calculations</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newStructureModal">
+                <i class="bi bi-plus-lg me-1"></i> New Structure
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                <thead>
+                    <tr>
+                        <th class="ps-3" style="width: 70px;">ID</th>
+                        <th>Client</th>
+                        <th>Structure / Schema Name</th>
+                        <th class="text-center">Configured Fields</th>
+                        <th>Created Date</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Structures }}
+                    <tr>
+                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
+                        <td class="fw-bold text-dark">{{ .ClientName }}</td>
+                        <td class="fw-semibold text-primary">{{ .StructureName }}</td>
+                        <td class="text-center"><span class="badge badge-secondary font-monospace">{{ .ColumnCount }} fields</span></td>
+                        <td class="text-muted font-monospace">{{ .CreatedAt }}</td>
+                        <td class="text-end pe-3">
+                            <a href="/structures/edit?id={{ .ID }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-sliders me-1"></i> Build Schema
+                            </a>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted fst-italic">No dynamic structures created.</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- New Structure Modal -->
+<div class="modal fade" id="newStructureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/structures" method="POST">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-15 fw-bold">Create Dynamic Structure</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Client <span class="text-danger">*</span></label>
+                        <select name="client_id" class="form-select" required>
+                            <option value="">-- Choose Client --</option>
+                            {{ range .Clients }}
+                                <option value="{{ .ID }}">{{ .Name }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Structure Name <span class="text-danger">*</span></label>
+                        <input type="text" name="structure_name" class="form-control" placeholder="e.g. Retail Loan Verification Format" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Create &amp; Configure</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" . }}
