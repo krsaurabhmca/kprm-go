@@ -22,15 +22,26 @@ func ShowLogin(c *gin.Context) {
 	}
 
 	var errorMsg, successMsg string
-	if e := session.Get("error"); e != nil {
-		errorMsg = e.(string)
-		session.Delete("error")
+	if e, exists := c.Get("flash_error"); exists && e != nil {
+		errorMsg, _ = e.(string)
 	}
-	if s := session.Get("success"); s != nil {
-		successMsg = s.(string)
-		session.Delete("success")
+	if s, exists := c.Get("flash_success"); exists && s != nil {
+		successMsg, _ = s.(string)
 	}
-	_ = session.Save()
+	if errorMsg == "" {
+		if e := session.Get("error"); e != nil {
+			errorMsg, _ = e.(string)
+			session.Delete("error")
+			_ = session.Save()
+		}
+	}
+	if successMsg == "" {
+		if s := session.Get("success"); s != nil {
+			successMsg, _ = s.(string)
+			session.Delete("success")
+			_ = session.Save()
+		}
+	}
 
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"Title":   "Sign In - KPRM2",
@@ -124,10 +135,15 @@ func ShowRegister(c *gin.Context) {
 
 	session := sessions.Default(c)
 	var errorMsg string
-	if e := session.Get("error"); e != nil {
-		errorMsg = e.(string)
-		session.Delete("error")
-		_ = session.Save()
+	if e, exists := c.Get("flash_error"); exists && e != nil {
+		errorMsg, _ = e.(string)
+	}
+	if errorMsg == "" {
+		if e := session.Get("error"); e != nil {
+			errorMsg, _ = e.(string)
+			session.Delete("error")
+			_ = session.Save()
+		}
 	}
 
 	c.HTML(http.StatusOK, "register.html", gin.H{

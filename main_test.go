@@ -288,3 +288,38 @@ func TestAuthenticatedRoutes(t *testing.T) {
 		}
 	}
 }
+
+func TestLoginFlashErrorMessage(t *testing.T) {
+	r := setupTestRouter(t)
+
+	// Step 1: POST to /login with wrong credentials
+	form := "username=nonexistentuser&password=wrongpassword"
+	wPost := httptest.NewRecorder()
+	reqPost, _ := http.NewRequest("POST", "/login", strings.NewReader(form))
+	reqPost.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.ServeHTTP(wPost, reqPost)
+
+	if wPost.Code != http.StatusFound {
+		t.Fatalf("Expected 302 Found, got %d", wPost.Code)
+	}
+
+	cookie := wPost.Header().Get("Set-Cookie")
+	if cookie == "" {
+		t.Fatalf("Expected session cookie to be set")
+	}
+
+	// Step 2: GET /login with that session cookie
+	wGet := httptest.NewRecorder()
+	reqGet, _ := http.NewRequest("GET", "/login", nil)
+	reqGet.Header.Set("Cookie", cookie)
+	r.ServeHTTP(wGet, reqGet)
+
+	if wGet.Code != http.StatusOK {
+		t.Fatalf("Expected 200 OK on /login, got %d", wGet.Code)
+	}
+
+	body := wGet.Body.String()
+	if !strings.Contains(body, "Invalid username or password.") {
+		t.Errorf("Expected login page to display flash error 'Invalid username or password.', got body: %s", body)
+	}
+}
