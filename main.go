@@ -41,6 +41,7 @@ func main() {
 		Path:     "/",
 		MaxAge:   86400 * 7, // 7 days
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	})
 	r.Use(sessions.Sessions("kprm2_session", store))
 

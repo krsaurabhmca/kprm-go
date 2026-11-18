@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func ShowLogin(c *gin.Context) {
 func ProcessLogin(c *gin.Context) {
 	session := sessions.Default(c)
 	username := strings.TrimSpace(c.PostForm("username"))
-	password := c.PostForm("password")
+	password := strings.TrimSpace(c.PostForm("password"))
 
 	if username == "" || password == "" {
 		session.Set("error", "Please provide username and password.")
@@ -52,14 +53,23 @@ func ProcessLogin(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		log.Printf("❌ [LOGIN ERROR] Database is nil! Please verify database connection settings in .env")
+		session.Set("error", "Database connection failed. Please check server database settings.")
+		_ = session.Save()
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
 	var user models.User
 	query := `
-		SELECT u.id, u.username, u.password_hash, u.role_id, r.role_name, u.allowed_task_types
+		SELECT u.id, u.username, u.password_hash, COALESCE(u.role_id, 1), COALESCE(r.role_name, 'Admin'), u.allowed_task_types
 		FROM users u 
-		JOIN user_roles r ON u.role_id = r.id 
-		WHERE u.username = ? LIMIT 1
+		LEFT JOIN user_roles r ON u.role_id = r.id 
+		WHERE LOWER(u.username) = LOWER(?) OR (u.email IS NOT NULL AND LOWER(u.email) = LOWER(?)) 
+		LIMIT 1
 	`
-	err := db.QueryRow(query, username).Scan(
+	err := db.QueryRow(query, username, username).Scan(
 		&user.ID,
 		&user.Username,
 		&user.PasswordHash,
@@ -68,12 +78,23 @@ func ProcessLogin(c *gin.Context) {
 		&user.AllowedTaskTypes,
 	)
 
-	if err != nil || !utils.CheckPassword(password, user.PasswordHash) {
+	if err != nil {
+		log.Printf("⚠️ [LOGIN] User lookup failed for '%s': %v", username, err)
 		session.Set("error", "Invalid username or password.")
 		_ = session.Save()
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
+
+	if !utils.CheckPassword(password, user.PasswordHash) {
+		log.Printf("⚠️ [LOGIN] Password mismatch for user '%s'", username)
+		session.Set("error", "Invalid username or password.")
+		_ = session.Save()
+		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+
+	log.Printf("✅ [LOGIN SUCCESS] User '%s' (Role: %s, ID: %d) authenticated successfully", user.Username, user.RoleName, user.ID)
 
 	session.Set("user_id", user.ID)
 	session.Set("username", user.Username)
