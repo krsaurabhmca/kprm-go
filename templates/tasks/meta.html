@@ -124,14 +124,21 @@
                             <span class="badge {{ if eq .RemarkType "Positive" }}badge-success{{ else if eq .RemarkType "Negative" }}badge-danger{{ else }}badge-warning{{ end }} text-uppercase">
                                 {{ .RemarkType }} Outcome
                             </span>
-                            <form action="/tasks/meta/remark/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this remark template?');">
-                                <input type="hidden" name="task_id" value="{{ $.TaskID }}">
-                                <input type="hidden" name="remark_id" value="{{ .ID }}">
-                                <button type="submit" class="btn btn-sm btn-link text-danger p-0 fs-12 text-decoration-none" title="Delete">
-                                    <i class="bi bi-trash"></i> Delete
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-link text-primary p-0 fs-12 text-decoration-none fw-semibold" onclick="editRemarkTemplate({{ .ID }}, '{{ .RemarkType }}', this)" title="Edit Template">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit
                                 </button>
-                            </form>
+                                <span class="text-muted">|</span>
+                                <form action="/tasks/meta/remark/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this remark template?');">
+                                    <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                    <input type="hidden" name="remark_id" value="{{ .ID }}">
+                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 fs-12 text-decoration-none" title="Delete">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
                         </div>
+                        <div id="remark_text_raw_{{ .ID }}" style="display:none;">{{ .RemarkText }}</div>
                         <div class="p-2 bg-light rounded border text-secondary font-monospace fs-11" style="white-space: pre-wrap;">{{ .RemarkText }}</div>
                     </div>
                     {{ else }}
@@ -219,7 +226,7 @@
                 <input type="hidden" name="task_id" value="{{ .TaskID }}">
                 <input type="hidden" name="remark_id" id="remark_id" value="0">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold">Create Standard Remark Template</h5>
+                    <h5 class="modal-title fs-15 fw-bold" id="remarkModalTitle">Create Standard Remark Template</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -238,7 +245,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Remark</button>
+                    <button type="submit" id="remarkSubmitBtn" class="btn btn-primary btn-sm px-4 fw-bold">Save Remark</button>
                 </div>
             </form>
         </div>
@@ -260,8 +267,21 @@ function openCreateFieldModal() {
 
 function openCreateRemarkModal() {
     document.getElementById('remark_id').value = '0';
+    document.getElementById('remarkModalTitle').innerText = 'Create Standard Remark Template';
     document.getElementById('modal_remark_type').value = 'Positive';
     document.getElementById('modal_remark_text').value = '';
+    document.getElementById('remarkSubmitBtn').innerText = 'Save Remark';
+}
+
+function editRemarkTemplate(id, type, btn) {
+    document.getElementById('remark_id').value = id;
+    document.getElementById('remarkModalTitle').innerText = 'Edit Standard Remark Template';
+    document.getElementById('modal_remark_type').value = type;
+    const rawTextEl = document.getElementById('remark_text_raw_' + id);
+    document.getElementById('modal_remark_text').value = rawTextEl ? rawTextEl.innerText : '';
+    document.getElementById('remarkSubmitBtn').innerText = 'Update Remark';
+    const modal = new bootstrap.Modal(document.getElementById('remarkModal'));
+    modal.show();
 }
 </script>
 

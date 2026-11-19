@@ -16,8 +16,16 @@ import (
 
 // ManageReports displays reports hub and templates list
 func ManageReports(c *gin.Context) {
-	data := middleware.GetBaseTemplateData(c, "Report Center & MIS", "/reports")
+	data := middleware.GetBaseTemplateData(c, "Manage Report Templates", "/reports")
 	db := database.GetDB()
+
+	type ReportTemplateItem struct {
+		ID         int
+		Name       string
+		SheetName  string
+		ClientName string
+		CreatedAt  string
+	}
 
 	type ClientReportItem struct {
 		ID            int
@@ -27,8 +35,30 @@ func ManageReports(c *gin.Context) {
 		PendingCount  int
 	}
 
+	var templates []ReportTemplateItem
 	var clients []ClientReportItem
+
 	if db != nil {
+		// Fetch report templates
+		qTpl := `
+			SELECT r.id, r.name, COALESCE(r.sheet_name, 'Sheet1'),
+			       COALESCE(c.name, 'Unassigned') as client_name,
+			       COALESCE(DATE_FORMAT(r.created_at, '%d-%b-%Y'), '-') as created_at
+			FROM report_templates r
+			LEFT JOIN clients c ON r.client_id = c.id
+			ORDER BY r.created_at DESC
+		`
+		tRows, errT := db.Query(qTpl)
+		if errT == nil {
+			defer tRows.Close()
+			for tRows.Next() {
+				var tItem ReportTemplateItem
+				_ = tRows.Scan(&tItem.ID, &tItem.Name, &tItem.SheetName, &tItem.ClientName, &tItem.CreatedAt)
+				templates = append(templates, tItem)
+			}
+		}
+
+		// Fetch client metrics
 		q := `
 			SELECT cl.id, cl.name,
 			       COUNT(DISTINCT ca.id) as case_count,
@@ -51,6 +81,7 @@ func ManageReports(c *gin.Context) {
 		}
 	}
 
+	data["Templates"] = templates
 	data["Clients"] = clients
 	c.HTML(http.StatusOK, "reports/list.html", data)
 }

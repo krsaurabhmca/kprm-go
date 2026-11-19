@@ -3,12 +3,12 @@
 <div class="content-body p-4 wizard-container">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">Case Management</h1>
+            <h1 class="h3 fw-bold text-dark mb-1">Manage Cases</h1>
             <p class="text-secondary small mb-0">Browse, filter, and track case lifecycle across clients</p>
         </div>
         <div>
             <a href="/cases/new" class="btn btn-primary btn-sm px-3 shadow-sm">
-                <i class="bi bi-plus-lg me-1"></i> Ingest New Case
+                <i class="bi bi-plus-lg me-1"></i> New Case
             </a>
         </div>
     </div>
@@ -89,7 +89,7 @@
                             <button type="button" class="btn btn-sm btn-secondary me-1" onclick="openCaseStageModal({{ .ID }})" title="View Lifecycle Stage">
                                 <i class="bi bi-eye"></i> Stage
                             </button>
-                            <a href="/cases/view?id={{ .ID }}" class="btn btn-sm btn-primary me-1" title="Case Details">
+                            <a href="/cases/{{ .ID }}" class="btn btn-sm btn-primary me-1" title="Case Details">
                                 <i class="bi bi-folder2"></i> View
                             </a>
                             <a href="/reports/generate?case_id={{ .ID }}&type=excel" class="btn btn-sm btn-success" title="Download Excel MIS">

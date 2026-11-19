@@ -1,50 +1,127 @@
 {{ template "header.html" . }}
 
 <div class="content-body p-4 wizard-container">
+    <!-- Header Banner -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">Reports &amp; MIS Generation Center</h1>
-            <p class="text-secondary small mb-0">Generate print-ready investigation reports, audit matrices, and styled Excel MIS exports</p>
+            <h1 class="h4 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-text text-primary"></i> Manage Report Templates
+            </h1>
+            <p class="text-secondary small mb-0">View and configure mapping schemas and generate client-specific verification reports.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/tasks/formats" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-grid-3x3"></i> Task Table Formats
+            </a>
+            <a href="/structures" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+                <i class="bi bi-plus-circle"></i> Configure Structures
+            </a>
         </div>
     </div>
 
-    <!-- Quick Report Generator Card -->
-    <div class="card p-4 mb-4">
-        <h5 class="card-title mb-3"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i> On-Demand Case Report Generator</h5>
-        <form action="/reports/generate" method="GET" class="row g-3 align-items-end" target="_blank">
-            <div class="col-12 col-md-4">
-                <label class="form-label fs-13 fw-semibold text-secondary">Enter Case ID <span class="text-danger">*</span></label>
-                <input type="number" name="case_id" class="form-control" placeholder="e.g. 25" required>
-            </div>
-            <div class="col-12 col-md-4">
-                <label class="form-label fs-13 fw-semibold text-secondary">Output Format</label>
-                <select name="type" class="form-select">
-                    <option value="html">Print-Ready HTML / PDF View</option>
-                    <option value="excel">Styled Excel MIS (.xlsx)</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-4">
-                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-                    <i class="bi bi-download me-1"></i> Generate &amp; Export
-                </button>
-            </div>
-        </form>
+    <!-- Quick On-Demand Report Generator -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-printer text-success"></i> Instant Case Report &amp; MIS Generator
+            </h6>
+            <span class="badge bg-success bg-opacity-20 text-success fw-bold px-2 py-1 fs-11">Active Dispatcher</span>
+        </div>
+        <div class="card-body p-3">
+            <form action="/reports/generate" method="GET" class="row g-3 align-items-end" target="_blank">
+                <div class="col-12 col-md-4">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Case Reference # <span class="text-danger">*</span></label>
+                    <input type="number" name="case_id" class="form-control form-control-sm fs-13" placeholder="e.g. 46" required>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Target Output Format</label>
+                    <select name="type" class="form-select form-select-sm fs-13">
+                        <option value="html">Print-Ready HTML / PDF Report</option>
+                        <option value="excel">Styled Excel MIS (.xlsx)</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-4">
+                    <button type="submit" class="btn btn-primary btn-sm w-100 py-2 fw-semibold shadow-sm d-flex align-items-center justify-content-center gap-1">
+                        <i class="bi bi-download"></i> Generate &amp; Download Report
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <!-- Client Directory for bulk reporting -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title"><i class="bi bi-building me-2 text-primary"></i> Client-Level Automated Reporting</h5>
+    <!-- Configured Report Templates Table -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-layout-text-window-reverse text-primary"></i> Client Report Mapping Templates ({{ len .Templates }})
+            </h6>
         </div>
         <div class="table-responsive">
             <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                <thead>
+                <thead class="table-light">
                     <tr>
-                        <th class="ps-3">Client</th>
-                        <th class="text-center">Total Ingested Cases</th>
-                        <th class="text-center">Positive / Verified</th>
+                        <th class="ps-3" style="width: 75px;">ID</th>
+                        <th>Template Name</th>
+                        <th>Target Client</th>
+                        <th>Sheet Name</th>
+                        <th>Created Date</th>
+                        <th class="text-end pe-3" style="width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Templates }}
+                    <tr>
+                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
+                        <td>
+                            <strong class="text-dark">{{ .Name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-building me-1"></i>{{ .ClientName }}</span>
+                        </td>
+                        <td>
+                            <code class="text-secondary">{{ .SheetName }}</code>
+                        </td>
+                        <td class="text-muted small">{{ .CreatedAt }}</td>
+                        <td class="text-end pe-3">
+                            <a href="/reports/generate?template_id={{ .ID }}&type=html" target="_blank" class="btn btn-outline-primary btn-sm py-1 px-2" title="Preview Sample">
+                                <i class="bi bi-eye"></i> Preview
+                            </a>
+                            <a href="/reports/generate?template_id={{ .ID }}&type=excel" class="btn btn-outline-success btn-sm py-1 px-2 ms-1" title="Download Excel">
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </a>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted fst-italic">
+                            No report mapping templates configured yet.
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Client Directory & MIS Case Metrics -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-pie-chart text-secondary"></i> Client MIS Portfolio &amp; Case Volume
+            </h6>
+            <a href="/cases" class="btn btn-sm btn-link text-primary p-0 fs-12 text-decoration-none fw-semibold">
+                View All Cases &rarr;
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Client Organization</th>
+                        <th class="text-center">Total Cases</th>
+                        <th class="text-center">Positive / Completed</th>
                         <th class="text-center">In Progress</th>
-                        <th class="text-end pe-3">Actions</th>
+                        <th class="text-end pe-3">Operations</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,17 +129,17 @@
                     <tr>
                         <td class="ps-3 fw-bold text-dark">{{ .Name }}</td>
                         <td class="text-center">
-                            <span class="badge badge-secondary font-monospace">{{ .CaseCount }}</span>
+                            <span class="badge bg-secondary-subtle text-dark font-monospace px-2 py-1">{{ .CaseCount }}</span>
                         </td>
                         <td class="text-center">
-                            <span class="badge badge-success font-monospace">{{ .PositiveCount }}</span>
+                            <span class="badge bg-success bg-opacity-20 text-success font-monospace px-2 py-1">{{ .PositiveCount }}</span>
                         </td>
                         <td class="text-center">
-                            <span class="badge badge-warning font-monospace">{{ .PendingCount }}</span>
+                            <span class="badge bg-warning bg-opacity-20 text-warning-emphasis font-monospace px-2 py-1">{{ .PendingCount }}</span>
                         </td>
                         <td class="text-end pe-3">
-                            <a href="/cases" class="btn btn-sm btn-primary">
-                                <i class="bi bi-folder2 me-1"></i> Browse Cases
+                            <a href="/clients/focus?id={{ .ID }}" class="btn btn-sm btn-outline-primary py-1 px-2 fs-12">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Focus Client
                             </a>
                         </td>
                     </tr>

@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -144,6 +145,9 @@ func ViewCase(c *gin.Context) {
 	if caseIDStr == "" {
 		caseIDStr = c.Query("id")
 	}
+	if caseIDStr == "" {
+		caseIDStr = c.Query("case_id")
+	}
 	caseID, _ := strconv.Atoi(caseIDStr)
 	if caseID == 0 {
 		c.Redirect(http.StatusFound, "/cases")
@@ -152,51 +156,66 @@ func ViewCase(c *gin.Context) {
 
 	db := database.GetDB()
 	var kase models.Case
-	var rawPickup, rawReverted, rawCreated sql.NullString
+	var rawCreated sql.NullTime
 
 	q := `
-		SELECT c.id, c.client_id, cl.name as client_name, c.structure_id, cs.structure_name,
-		       c.overall_status, c.is_closed, c.pickup_date, c.reverted_date, c.created_at
+		SELECT c.id, s.client_id, COALESCE(cl.name, 'Client') as client_name, c.structure_id,
+		       COALESCE(s.sheet_name, 'Standard Structure') as structure_name,
+		       COALESCE(c.status, 'Pending') as overall_status, COALESCE(c.is_closed, 0) as is_closed,
+		       c.created_at
 		FROM cases c
-		LEFT JOIN clients cl ON c.client_id = cl.id
-		LEFT JOIN client_structures cs ON c.structure_id = cs.id
+		JOIN client_structures s ON c.structure_id = s.id
+		JOIN clients cl ON s.client_id = cl.id
 		WHERE c.id = ? LIMIT 1
 	`
 	err := db.QueryRow(q, caseID).Scan(
 		&kase.ID, &kase.ClientID, &kase.ClientName, &kase.StructureID, &kase.StructureName,
-		&kase.OverallStatus, &kase.IsClosed, &rawPickup, &rawReverted, &rawCreated,
+		&kase.OverallStatus, &kase.IsClosed, &rawCreated,
 	)
 	if err != nil {
-		c.Redirect(http.StatusFound, "/cases")
-		return
+		// Fallback query if client join fails
+		qFallback := `
+			SELECT c.id, 0, 'Client', c.structure_id, 'Standard Structure',
+			       COALESCE(c.status, 'Pending'), COALESCE(c.is_closed, 0), c.created_at
+			FROM cases c WHERE c.id = ? LIMIT 1
+		`
+		err = db.QueryRow(qFallback, caseID).Scan(
+			&kase.ID, &kase.ClientID, &kase.ClientName, &kase.StructureID, &kase.StructureName,
+			&kase.OverallStatus, &kase.IsClosed, &rawCreated,
+		)
+		if err != nil {
+			c.Redirect(http.StatusFound, "/cases")
+			return
+		}
 	}
 
 	// Fetch dynamic data columns
 	dynamicData := make([]map[string]string, 0)
 	cdRows, err := db.Query(`
-		SELECT sc.display_name, sc.column_name, cd.data_value
-		FROM case_data cd
-		JOIN structure_columns sc ON cd.column_id = sc.id
-		WHERE cd.case_id = ?
-		ORDER BY sc.order_index ASC, sc.id ASC
-	`, caseID)
+		SELECT sc.excel_column_name, cd.data_value
+		FROM structure_columns sc
+		LEFT JOIN case_data cd ON sc.id = cd.column_id AND cd.case_id = ?
+		WHERE sc.structure_id = ?
+		ORDER BY sc.id ASC
+	`, caseID, kase.StructureID)
 	if err == nil {
 		defer cdRows.Close()
 		for cdRows.Next() {
-			var dName, cName, dVal sql.NullString
-			_ = cdRows.Scan(&dName, &cName, &dVal)
+			var colName, dVal sql.NullString
+			_ = cdRows.Scan(&colName, &dVal)
 			dynamicData = append(dynamicData, map[string]string{
-				"DisplayName": dName.String,
-				"ColumnName":  cName.String,
+				"DisplayName": colName.String,
+				"ColumnName":  colName.String,
 				"Value":       dVal.String,
 			})
 		}
 	}
 
-	// Fetch tasks
+	// Fetch constituent tasks
 	tasks := make([]map[string]interface{}, 0)
 	tRows, err := db.Query(`
-		SELECT ct.id, t.task_name, t.task_type, ct.status, ct.remarks, ct.verified_at,
+		SELECT ct.id, t.task_name, t.task_type, COALESCE(ct.status, 'Pending'),
+		       COALESCE(ct.final_remark, COALESCE(ct.remarks, '')), ct.verified_at,
 		       COALESCE(u.username, 'Unassigned') as verifier_name
 		FROM case_tasks ct
 		JOIN tasks t ON ct.task_id = t.id
@@ -222,7 +241,7 @@ func ViewCase(c *gin.Context) {
 				"TaskName":     tName.String,
 				"TaskType":     tType.String,
 				"Status":       tStatus.String,
-				"StatusBadge":  utils.StatusBadgeHTML(tStatus.String),
+				"StatusBadge":  template.HTML(utils.StatusBadgeHTML(tStatus.String)),
 				"Remarks":      tRemarks.String,
 				"VerifierName": tVerifier.String,
 				"VerifiedAt":   vDate,
@@ -230,12 +249,17 @@ func ViewCase(c *gin.Context) {
 		}
 	}
 
+	cDate := "-"
+	if rawCreated.Valid {
+		cDate = rawCreated.Time.Format("02-Jan-2006 15:04")
+	}
+
 	data := middleware.GetBaseTemplateData(c, fmt.Sprintf("Case Details #%d", caseID), "/cases")
 	data["Case"] = kase
 	data["DynamicData"] = dynamicData
 	data["Tasks"] = tasks
-	data["CreatedAt"] = utils.FormatDateString(rawCreated.String, "02-Jan-2006 15:04")
-	data["TAT"] = utils.CalculateTAT(rawCreated.String, rawReverted.String)
+	data["CreatedAt"] = cDate
+	data["TAT"] = "-"
 
 	c.HTML(http.StatusOK, "cases/view.html", data)
 }
@@ -249,13 +273,23 @@ func CaseStageModalAPI(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	var kase models.Case
-	err := db.QueryRow("SELECT c.id, cl.name as client_name, c.overall_status, c.is_closed FROM cases c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.id = ?", caseID).Scan(
-		&kase.ID, &kase.ClientName, &kase.OverallStatus, &kase.IsClosed,
-	)
+	var clientName, status string
+	var isClosed int
+
+	err := db.QueryRow(`
+		SELECT COALESCE(cl.name, 'Client'), COALESCE(c.status, 'Pending'), COALESCE(c.is_closed, 0)
+		FROM cases c
+		JOIN client_structures s ON c.structure_id = s.id
+		JOIN clients cl ON s.client_id = cl.id
+		WHERE c.id = ?
+	`, caseID).Scan(&clientName, &status, &isClosed)
+
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Case not found"})
-		return
+		err = db.QueryRow("SELECT 'Client', COALESCE(status, 'Pending'), COALESCE(is_closed, 0) FROM cases WHERE id = ?", caseID).Scan(&clientName, &status, &isClosed)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Case not found"})
+			return
+		}
 	}
 
 	// Fetch tasks
@@ -272,7 +306,8 @@ func CaseStageModalAPI(c *gin.Context) {
 
 	var stageTasks []StageTask
 	rows, err := db.Query(`
-		SELECT ct.id, t.task_name, t.task_type, ct.status, ct.remarks,
+		SELECT ct.id, t.task_name, t.task_type, COALESCE(ct.status, 'Pending'),
+		       COALESCE(ct.final_remark, COALESCE(ct.remarks, '')),
 		       COALESCE(u.username, 'Unassigned') as verifier_name
 		FROM case_tasks ct
 		JOIN tasks t ON ct.task_id = t.id
@@ -304,10 +339,10 @@ func CaseStageModalAPI(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"case_id":        kase.ID,
-		"client_name":    kase.ClientName,
-		"overall_status": kase.OverallStatus,
-		"status_badge":   utils.StatusBadgeHTML(kase.OverallStatus),
+		"case_id":        caseID,
+		"client_name":    clientName,
+		"overall_status": status,
+		"status_badge":   utils.StatusBadgeHTML(status),
 		"tasks":          stageTasks,
 	})
 }

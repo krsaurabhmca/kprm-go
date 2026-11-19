@@ -456,7 +456,11 @@ func SaveTaskBlueprint(c *gin.Context) {
 
 // ManageTaskMeta handles task meta field definitions, RBAC, and standard remarks
 func ManageTaskMeta(c *gin.Context) {
-	taskID, _ := strconv.Atoi(c.DefaultQuery("id", c.Query("task_id")))
+	taskIDStr := c.Query("task_id")
+	if taskIDStr == "" {
+		taskIDStr = c.Query("id")
+	}
+	taskID, _ := strconv.Atoi(taskIDStr)
 	if taskID == 0 {
 		c.Redirect(http.StatusFound, "/tasks/blueprints")
 		return
@@ -676,7 +680,15 @@ func ToggleTaskMetaFlag(c *gin.Context) {
 // SaveTaskRemark creates or updates a standard verification remark template and auto-extracts #tags#
 func SaveTaskRemark(c *gin.Context) {
 	session := sessions.Default(c)
-	taskID, _ := strconv.Atoi(c.DefaultPostForm("task_id", c.Query("task_id")))
+	taskIDStr := c.PostForm("task_id")
+	if taskIDStr == "" {
+		taskIDStr = c.Query("task_id")
+	}
+	if taskIDStr == "" {
+		taskIDStr = c.Query("id")
+	}
+	taskID, _ := strconv.Atoi(taskIDStr)
+
 	remarkID, _ := strconv.Atoi(c.PostForm("remark_id"))
 	remarkType := strings.TrimSpace(c.PostForm("remark_type"))
 	remarkText := strings.TrimSpace(c.PostForm("remark_text"))
@@ -689,10 +701,18 @@ func SaveTaskRemark(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	var err error
 	if remarkID > 0 {
-		_, _ = db.Exec("UPDATE task_remarks SET remark_type = ?, remark_text = ? WHERE id = ? AND task_id = ?", remarkType, remarkText, remarkID, taskID)
+		_, err = db.Exec("UPDATE task_remarks SET remark_type = ?, remark_text = ? WHERE id = ? AND task_id = ?", remarkType, remarkText, remarkID, taskID)
 	} else {
-		_, _ = db.Exec("INSERT INTO task_remarks (task_id, remark_type, remark_text) VALUES (?, ?, ?)", taskID, remarkType, remarkText)
+		_, err = db.Exec("INSERT INTO task_remarks (task_id, remark_type, remark_text) VALUES (?, ?, ?)", taskID, remarkType, remarkText)
+	}
+
+	if err != nil {
+		session.Set("error", "Failed to save remark template: "+err.Error())
+		_ = session.Save()
+		c.Redirect(http.StatusFound, fmt.Sprintf("/tasks/meta?task_id=%d", taskID))
+		return
 	}
 
 	// Auto-extract #tags# and create fields in task_meta if not already present
@@ -713,13 +733,14 @@ func SaveTaskRemark(c *gin.Context) {
 
 		for _, tag := range matches {
 			cleanTag := tag
+			raw := strings.Trim(tag, "#")
+			fieldName := strings.Title(strings.ReplaceAll(raw, "_", " "))
+
 			var count int
-			_ = db.QueryRow("SELECT COUNT(*) FROM task_meta WHERE task_id = ? AND variable_tag = ?", taskID, cleanTag).Scan(&count)
+			_ = db.QueryRow("SELECT COUNT(*) FROM task_meta WHERE task_id = ? AND (variable_tag = ? OR field_name = ? OR field_name = ?)", taskID, cleanTag, raw, fieldName).Scan(&count)
 			if count == 0 {
-				raw := strings.Trim(tag, "#")
-				fieldName := strings.Title(strings.ReplaceAll(raw, "_", " "))
-				res, err := db.Exec("INSERT INTO task_meta (task_id, field_name, data_type, variable_tag, is_mandatory, show_in_details, send_in_message) VALUES (?, ?, 'Text', ?, 0, 0, 1)", taskID, fieldName, cleanTag)
-				if err == nil {
+				res, errM := db.Exec("INSERT INTO task_meta (task_id, field_name, data_type, variable_tag, is_mandatory, show_in_details, send_in_message) VALUES (?, ?, 'Text', ?, 0, 0, 1)", taskID, fieldName, cleanTag)
+				if errM == nil {
 					newMID, _ := res.LastInsertId()
 					for _, rid := range roles {
 						_, _ = db.Exec("INSERT INTO task_meta_rbac (task_meta_id, role_id, access_level) VALUES (?, ?, 'Write')", newMID, rid)
@@ -729,7 +750,7 @@ func SaveTaskRemark(c *gin.Context) {
 		}
 	}
 
-	session.Set("success", "Remark template saved. Any new #tags# have been auto-created as input fields.")
+	session.Set("success", "Remark template saved successfully. Any new #tags# have been auto-created as input fields.")
 	_ = session.Save()
 	c.Redirect(http.StatusFound, fmt.Sprintf("/tasks/meta?task_id=%d", taskID))
 }
@@ -737,14 +758,39 @@ func SaveTaskRemark(c *gin.Context) {
 // DeleteTaskRemark deletes a standard remark template
 func DeleteTaskRemark(c *gin.Context) {
 	session := sessions.Default(c)
-	taskID, _ := strconv.Atoi(c.DefaultPostForm("task_id", c.Query("task_id")))
+	taskIDStr := c.PostForm("task_id")
+	if taskIDStr == "" {
+		taskIDStr = c.Query("task_id")
+	}
+	if taskIDStr == "" {
+		taskIDStr = c.Query("id")
+	}
+	taskID, _ := strconv.Atoi(taskIDStr)
 	remarkID, _ := strconv.Atoi(c.DefaultPostForm("remark_id", c.Param("id")))
 
 	db := database.GetDB()
 	_, _ = db.Exec("DELETE FROM task_remarks WHERE id = ? AND task_id = ?", remarkID, taskID)
 	session.Set("success", "Remark template deleted.")
 	_ = session.Save()
+
 	c.Redirect(http.StatusFound, fmt.Sprintf("/tasks/meta?task_id=%d", taskID))
+}
+
+// HandleTaskMetaPost routes legacy or direct POST /manage_task_meta.php based on action
+func HandleTaskMetaPost(c *gin.Context) {
+	action := c.PostForm("action")
+	switch action {
+	case "add_remark", "edit_remark":
+		SaveTaskRemark(c)
+	case "delete_remark":
+		DeleteTaskRemark(c)
+	case "delete_meta":
+		DeleteTaskMetaField(c)
+	case "toggle_field":
+		ToggleTaskMetaFlag(c)
+	default:
+		SaveTaskMetaField(c)
+	}
 }
 
 // ManageTaskFormats lists task report format configurations

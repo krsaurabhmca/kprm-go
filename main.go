@@ -100,10 +100,13 @@ func main() {
 	r.GET("/manage_cases.php", redirectWithQuery("/cases"))
 	r.GET("/view_case.php", func(c *gin.Context) {
 		id := c.Query("id")
+		if id == "" {
+			id = c.Query("case_id")
+		}
 		if id != "" {
-			c.Redirect(http.StatusMovedPermanently, "/cases/"+id)
+			c.Redirect(http.StatusFound, "/cases/"+id)
 		} else {
-			c.Redirect(http.StatusMovedPermanently, "/cases")
+			c.Redirect(http.StatusFound, "/cases")
 		}
 	})
 	r.GET("/case_select.php", func(c *gin.Context) { c.Redirect(http.StatusMovedPermanently, "/cases/new") })
@@ -116,7 +119,7 @@ func main() {
 	r.GET("/manage_tasks.php", redirectWithQuery("/tasks/blueprints"))
 	r.POST("/manage_tasks.php", handlers.SaveTaskBlueprint)
 	r.GET("/manage_task_meta.php", redirectWithQuery("/tasks/meta"))
-	r.POST("/manage_task_meta.php", handlers.SaveTaskMetaField)
+	r.POST("/manage_task_meta.php", handlers.HandleTaskMetaPost)
 	r.GET("/manage_task_formats.php", redirectWithQuery("/tasks/formats"))
 
 	r.GET("/process_tasks.php", redirectWithQuery("/process"))
@@ -169,6 +172,7 @@ func main() {
 		authGroup.GET("/cases/form", handlers.ShowCaseForm)
 		authGroup.POST("/cases/new", handlers.SaveCase)
 		authGroup.GET("/cases/:id", handlers.ViewCase)
+		authGroup.GET("/cases/view", handlers.ViewCase)
 		authGroup.POST("/cases/:id/close", handlers.CloseCase)
 		authGroup.POST("/cases/:id/delete", handlers.DeleteCase)
 

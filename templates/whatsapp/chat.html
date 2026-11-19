@@ -1,22 +1,22 @@
 {{ template "header.html" . }}
 
-<div class="content-body p-4 wizard-container" style="max-width: 100%;">
+<div class="content-body p-3 wizard-container" style="max-width: 100%;">
 
     <!-- Top Management & Instance Switcher Strip -->
-    <div class="card p-3 mb-3 d-flex flex-row justify-content-between align-items-center flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3">
-            <div style="width: 42px; height: 42px; border-radius: 10px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; border: 1px solid #a7f3d0; flex-shrink: 0;">
+    <div class="card p-2 px-3 mb-2 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2 shadow-sm border-0">
+        <div class="d-flex align-items-center gap-2">
+            <div style="width: 34px; height: 34px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; border: 1px solid #a7f3d0; flex-shrink: 0;">
                 <i class="bi bi-whatsapp"></i>
             </div>
             <div>
                 <div class="d-flex align-items-center gap-2">
-                    <h3 class="fs-15 fw-bold text-dark mb-0">Live WhatsApp &amp; QR Console</h3>
-                    <span id="instanceStateBadge" class="badge badge-success px-2 py-1">
-                        <i class="bi bi-circle-fill me-1" style="font-size: 7px;"></i> Ready
+                    <h3 class="fs-14 fw-bold text-dark mb-0">Live Chat &amp; QR Console</h3>
+                    <span id="instanceStateBadge" class="badge bg-success bg-opacity-25 text-success fw-bold px-2 py-0 fs-11">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i> Ready
                     </span>
                 </div>
-                <div class="text-secondary small mt-1">
-                    Gateway: <strong class="text-dark">Green API Enterprise</strong> &bull; Instance: <code id="currentInstanceId" class="text-primary fw-bold">Active</code>
+                <div class="text-secondary small mt-0 fs-11">
+                    Gateway: <strong class="text-dark">Green API</strong> &bull; Instance: <code id="currentInstanceId" class="text-primary fw-bold">Active</code>
                 </div>
             </div>
         </div>
@@ -25,7 +25,7 @@
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <div class="d-flex align-items-center gap-1">
                 <label class="form-label fs-11 fw-bold text-uppercase text-secondary mb-0">Instance:</label>
-                <select id="activeInstanceSelect" class="form-select form-select-sm" style="min-width: 200px;" onchange="updateInstance()">
+                <select id="activeInstanceSelect" class="form-select form-select-sm" style="min-width: 170px; height: 31px; font-size: 0.8rem;" onchange="updateInstance()">
                     {{ range .Accounts }}
                         <option value="{{ .ID }}">{{ .AccountName }} ({{ .Channel }}) {{ if eq .IsDefault 1 }}★ Default{{ end }}</option>
                     {{ else }}
@@ -34,44 +34,46 @@
                 </select>
             </div>
 
-            <button type="button" class="btn btn-secondary btn-sm" onclick="showQRModal()">
+            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 fs-12" onclick="showQRModal()">
                 <i class="bi bi-qr-code me-1"></i> QR Code / Login
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="checkState()" title="Refresh connection state">
+            <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 fs-12" onclick="checkState()" title="Refresh connection state">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
         </div>
     </div>
 
     <!-- Main Chat Workspace Window -->
-    <div class="card overflow-hidden p-0" style="height: calc(100vh - 210px); min-height: 540px;">
+    <div class="card overflow-hidden p-0 shadow-sm border-0" style="height: calc(100vh - 190px); min-height: 480px;">
         <div class="row g-0 h-100">
-            <!-- Left Chats & Contacts List (300px) -->
+            <!-- Left Chats & Contacts List (280px) -->
             <div class="col-12 col-md-4 col-lg-3 border-end d-flex flex-column h-100 bg-light">
-                <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                    <span class="fs-13 fw-bold text-dark"><i class="bi bi-people me-1 text-primary"></i> Contacts &amp; Verifiers</span>
-                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fs-11 fw-bold" onclick="promptNewChat()">
-                        <i class="bi bi-plus-lg me-1"></i> New Chat
+                <div class="p-2 px-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                    <span class="fs-12 fw-bold text-dark text-uppercase"><i class="bi bi-people me-1 text-primary"></i> Team Contacts ({{ len .Contacts }})</span>
+                    <button type="button" class="btn btn-primary btn-sm py-0 px-2 fs-11 fw-semibold" onclick="promptNewChat()">
+                        <i class="bi bi-plus me-0"></i> New Chat
                     </button>
                 </div>
                 <div class="p-2 border-bottom bg-white">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" id="contactSearchInput" class="form-control border-start-0" placeholder="Search contact or mobile..." onkeyup="filterContacts()">
+                        <span class="input-group-text bg-light border-end-0 py-0"><i class="bi bi-search text-muted fs-11"></i></span>
+                        <input type="text" id="contactSearchInput" class="form-control border-start-0 fs-12 py-1" placeholder="Search contact or mobile..." onkeyup="filterContacts()">
                     </div>
                 </div>
                 <div class="list-group list-group-flush overflow-auto flex-grow-1" id="chatsList">
                     {{ range .Contacts }}
-                    <a href="javascript:void(0)" class="list-group-item list-group-item-action p-2 px-3 border-bottom contact-item" onclick="selectChat('{{ .Mobile }}', '{{ .Username }} ({{ .RoleName }})')">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <strong class="text-truncate fs-13 text-dark">{{ .Username }}</strong>
-                            <span class="badge badge-secondary fs-10">{{ .RoleName }}</span>
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 px-3 border-bottom contact-item" onclick="selectChat('{{ .Mobile }}', '{{ .Username }} ({{ .RoleName }})')">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="text-truncate fs-12 text-dark">{{ .Username }}</strong>
+                            <span class="badge bg-secondary-subtle text-secondary fs-10 px-1 py-0">{{ .RoleName }}</span>
                         </div>
-                        <p class="mb-0 text-truncate font-monospace text-muted fs-11"><i class="bi bi-whatsapp text-success me-1"></i>{{ .Mobile }}</p>
+                        <p class="mb-0 text-truncate font-monospace text-muted fs-11 mt-0">
+                            <i class="bi bi-whatsapp text-success me-1"></i>{{ .Mobile }}
+                        </p>
                     </a>
                     {{ else }}
                     <div class="p-3 text-center text-muted small fst-italic">
-                        No team contacts found. Click "+ New Chat" to enter any phone number.
+                        No team contacts found. Click "New Chat" to enter any mobile number.
                     </div>
                     {{ end }}
                 </div>
@@ -80,35 +82,43 @@
             <!-- Right Active Thread -->
             <div class="col-12 col-md-8 col-lg-9 d-flex flex-column h-100 bg-white">
                 <!-- Chat Header -->
-                <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="fw-bold mb-0 text-dark" id="currentChatTitle">Select a team member or click "+ New Chat"</h6>
-                        <small class="text-secondary" id="currentChatSubtitle">
-                            <i class="bi bi-shield-check text-success me-1"></i> Direct WhatsApp Channel
-                        </small>
+                <div class="p-2 px-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div id="chatAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-dark fs-13" id="currentChatTitle">Select a contact or click "New Chat"</h6>
+                            <small class="text-secondary fs-11" id="currentChatSubtitle">
+                                <i class="bi bi-shield-check text-success me-1"></i> Direct WhatsApp Channel
+                            </small>
+                        </div>
                     </div>
-                    <div id="sendFeedback" class="small"></div>
+                    <div id="sendFeedback" class="small fs-12"></div>
                 </div>
 
                 <!-- Messages Container -->
-                <div class="p-4 overflow-auto flex-grow-1" id="messagesContainer" style="background: #f8fafc;">
-                    <div class="d-flex mb-3">
-                        <div class="p-3 bg-white rounded shadow-sm border" style="max-width: 70%;">
-                            <p class="mb-1 text-dark fs-13">Welcome to KPRM2 Live WhatsApp Gateway. Messages dispatched here go through your configured Green API instance.</p>
-                            <small class="text-muted fs-11">System Info</small>
+                <div class="p-3 overflow-auto flex-grow-1" id="messagesContainer" style="background: #efeae2; background-image: radial-gradient(#d1d5db 0.75px, transparent 0.75px); background-size: 14px 14px;">
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="py-1 px-3 bg-white rounded-pill shadow-sm border text-muted fs-11 text-center">
+                            <i class="bi bi-lock-fill text-warning me-1"></i> Messages sent via Green API WhatsApp Gateway
+                        </div>
+                    </div>
+                    <div class="d-flex mb-2">
+                        <div class="p-2 px-3 bg-white rounded-3 shadow-sm border" style="max-width: 75%; border-top-left-radius: 2px !important;">
+                            <p class="mb-0 text-dark fs-12">Select a recipient from the team list on the left, or click <strong>New Chat</strong> to message any field verifier or client contact directly.</p>
+                            <small class="text-muted fs-10 d-block text-end mt-1">System</small>
                         </div>
                     </div>
                 </div>
 
                 <!-- Chat Input Box -->
-                <div class="p-3 border-top bg-white">
-                    <form id="sendMessageForm" onsubmit="sendMessage(event)">
-                        <div class="input-group">
-                            <input type="text" id="messageInput" class="form-control" placeholder="Type a message or notification..." required>
-                            <button type="submit" class="btn btn-success px-4 fw-bold" id="sendBtn">
-                                <i class="bi bi-send-fill me-1"></i> Send
-                            </button>
-                        </div>
+                <div class="p-2 px-3 border-top bg-light">
+                    <form id="sendMessageForm" onsubmit="sendMessage(event)" class="d-flex gap-2">
+                        <input type="text" id="messageInput" class="form-control form-control-sm fs-13 py-2 bg-white" placeholder="Type a message or notification to send..." required>
+                        <button type="submit" class="btn btn-success btn-sm px-3 fw-bold d-flex align-items-center gap-1 shadow-sm" id="sendBtn">
+                            <i class="bi bi-send-fill"></i> Send
+                        </button>
                     </form>
                 </div>
             </div>
@@ -120,14 +130,19 @@
 <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm text-center">
         <div class="modal-content">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title fs-15 fw-bold">Authenticate WhatsApp</h5>
+            <div class="modal-header bg-light py-2">
+                <h5 class="modal-title fs-14 fw-bold">Authenticate WhatsApp</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <p class="small text-muted mb-3">Open WhatsApp &rarr; Linked Devices &rarr; Scan QR Code</p>
-                <div id="qrContainer" class="p-2 border rounded d-inline-block bg-light">
-                    <div class="spinner-border text-primary my-4" role="status"></div>
+            <div class="modal-body p-3">
+                <p class="small text-muted mb-2 fs-12">Open WhatsApp &rarr; Linked Devices &rarr; Scan QR Code</p>
+                <div id="qrContainer" class="p-2 border rounded d-inline-block bg-white shadow-sm">
+                    <div class="spinner-border text-primary my-3" role="status"></div>
+                </div>
+                <div class="mt-3 d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-sm btn-outline-secondary fs-12" onclick="showQRModal()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh QR
+                    </button>
                 </div>
             </div>
         </div>
@@ -135,117 +150,170 @@
 </div>
 
 <script>
-let currentChatRecipient = '';
+let activeChatNumber = '';
 
-function selectChat(mobile, title) {
-    currentChatRecipient = mobile;
-    document.getElementById('currentChatTitle').innerText = title;
-    document.getElementById('currentChatSubtitle').innerText = 'Recipient Mobile: ' + mobile;
-    
-    document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('active', 'text-white'));
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
+function updateInstance() {
+    const sel = document.getElementById('activeInstanceSelect');
+    const accId = sel.value;
+    document.getElementById('currentInstanceId').innerText = 'Loading...';
+    checkState(accId);
+}
+
+function checkState(accId) {
+    if (!accId) {
+        accId = document.getElementById('activeInstanceSelect').value;
     }
+    const badge = document.getElementById('instanceStateBadge');
+    badge.className = 'badge bg-secondary-subtle text-secondary fs-11';
+    badge.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width: 8px; height: 8px;"></span> Checking...';
+
+    fetch('/api/whatsapp/chat?action=status&account_id=' + accId)
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'authorized' || d.stateInstance === 'authorized') {
+                badge.className = 'badge bg-success bg-opacity-25 text-success fw-bold fs-11';
+                badge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i> Connected';
+            } else if (d.status === 'notAuthorized' || d.stateInstance === 'notAuthorized') {
+                badge.className = 'badge bg-warning bg-opacity-25 text-warning-emphasis fw-bold fs-11';
+                badge.innerHTML = '<i class="bi bi-qr-code me-1"></i> Scan Required';
+            } else {
+                badge.className = 'badge bg-secondary-subtle text-secondary fs-11';
+                badge.innerHTML = d.stateInstance || 'Ready';
+            }
+            if (d.instance) {
+                document.getElementById('currentInstanceId').innerText = d.instance;
+            }
+        })
+        .catch(() => {
+            badge.className = 'badge bg-success bg-opacity-25 text-success fw-bold fs-11';
+            badge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size: 6px;"></i> Ready';
+            document.getElementById('currentInstanceId').innerText = 'Active';
+        });
+}
+
+function showQRModal() {
+    const accId = document.getElementById('activeInstanceSelect').value;
+    const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+    qrModal.show();
+
+    const container = document.getElementById('qrContainer');
+    container.innerHTML = '<div class="spinner-border text-primary my-3" role="status"></div>';
+
+    fetch('/api/whatsapp/chat?action=qr&account_id=' + accId)
+        .then(r => r.json())
+        .then(d => {
+            if (d.qr) {
+                container.innerHTML = '<img src="' + d.qr + '" alt="WhatsApp QR Code" class="img-fluid" style="max-width: 220px; border-radius: 4px;">';
+            } else if (d.message) {
+                container.innerHTML = '<div class="text-success small py-3"><i class="bi bi-check-circle-fill fs-3 d-block mb-1"></i>' + d.message + '</div>';
+            } else {
+                container.innerHTML = '<div class="text-muted small py-3">Device is already authorized and connected!</div>';
+            }
+        })
+        .catch(err => {
+            container.innerHTML = '<div class="text-danger small py-3">Failed to load QR code.</div>';
+        });
+}
+
+function selectChat(number, title) {
+    activeChatNumber = number;
+    document.getElementById('currentChatTitle').innerText = title;
+    document.getElementById('currentChatSubtitle').innerHTML = '<i class="bi bi-whatsapp text-success me-1"></i> ' + number;
+    document.getElementById('messageInput').focus();
+    
+    // Set avatar initial
+    const initial = title.trim().charAt(0).toUpperCase();
+    document.getElementById('chatAvatar').innerText = initial;
+
+    // Add notification bubble to thread
+    const container = document.getElementById('messagesContainer');
+    const note = document.createElement('div');
+    note.className = 'd-flex justify-content-center my-2';
+    note.innerHTML = '<div class="py-1 px-3 bg-white rounded shadow-sm border text-muted fs-11">Chatting with ' + title + ' (' + number + ')</div>';
+    container.appendChild(note);
+    container.scrollTop = container.scrollHeight;
 }
 
 function promptNewChat() {
-    const num = prompt("Enter recipient phone number with country code (e.g. 919876543210):");
+    const num = prompt("Enter mobile number with country code (e.g. 919876543210):");
     if (num && num.trim()) {
-        selectChat(num.trim(), "Direct Chat: " + num.trim());
+        selectChat(num.trim(), "Direct #" + num.trim());
     }
 }
 
 function filterContacts() {
-    const val = document.getElementById('contactSearchInput').value.toLowerCase();
-    document.querySelectorAll('.contact-item').forEach(item => {
-        item.style.display = item.innerText.toLowerCase().includes(val) ? '' : 'none';
+    const q = document.getElementById('contactSearchInput').value.toLowerCase();
+    document.querySelectorAll('.contact-item').forEach(el => {
+        const text = el.innerText.toLowerCase();
+        el.style.display = text.includes(q) ? '' : 'none';
     });
 }
 
 function sendMessage(e) {
     e.preventDefault();
-    if (!currentChatRecipient) {
-        alert("Please select a contact or enter a recipient number first.");
-        return;
-    }
-
     const input = document.getElementById('messageInput');
     const msg = input.value.trim();
     if (!msg) return;
 
-    const accId = document.getElementById('activeInstanceSelect').value;
-    const body = new FormData();
-    body.append('action', 'send_message');
-    body.append('account_id', accId);
-    body.append('chat_id', currentChatRecipient);
-    body.append('message', msg);
+    if (!activeChatNumber) {
+        alert("Please select a team contact from the left, or click '+ New Chat'.");
+        return;
+    }
 
+    const accId = document.getElementById('activeInstanceSelect').value;
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = true;
+
+    // Display sent balloon optimistically
     const container = document.getElementById('messagesContainer');
-    const bubble = document.createElement('div');
-    bubble.className = 'd-flex justify-content-end mb-3';
-    bubble.innerHTML = '<div class="p-3 rounded shadow-sm text-white" style="background: #1e293b; max-width: 70%;"><p class="mb-1 fs-13">' + msg + '</p><small class="text-white-50 fs-11">Sent &bull; Just now</small></div>';
-    container.appendChild(bubble);
+    const sentDiv = document.createElement('div');
+    sentDiv.className = 'd-flex justify-content-end mb-2';
+    sentDiv.innerHTML = '<div class="p-2 px-3 rounded-3 shadow-sm border" style="background: #d9fdd3; max-width: 75%; border-top-right-radius: 2px !important;"><p class="mb-0 text-dark fs-12">' + escapeHtml(msg) + '</p><small class="text-muted fs-10 d-block text-end mt-1"><i class="bi bi-check2-all text-primary me-1"></i>Just now</small></div>';
+    container.appendChild(sentDiv);
     container.scrollTop = container.scrollHeight;
+
     input.value = '';
 
-    const feedback = document.getElementById('sendFeedback');
-    feedback.innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-1"></span> Dispatching...';
+    const payload = new URLSearchParams();
+    payload.append('action', 'send');
+    payload.append('account_id', accId);
+    payload.append('phone', activeChatNumber);
+    payload.append('message', msg);
 
-    fetch('/api/whatsapp_chat_api', { method: 'POST', body: body })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                feedback.innerHTML = '<span class="text-success"><i class="bi bi-check2-all me-1"></i> Delivered via Green API</span>';
-            } else {
-                feedback.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i> ' + (data.error || 'Dispatch error') + '</span>';
-            }
-            setTimeout(() => { feedback.innerHTML = ''; }, 4000);
-        })
-        .catch(err => {
-            feedback.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i> Network error: ' + err + '</span>';
-        });
+    fetch('/api/whatsapp/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload.toString()
+    })
+    .then(r => r.json())
+    .then(d => {
+        btn.disabled = false;
+        const fb = document.getElementById('sendFeedback');
+        if (d.success) {
+            fb.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Sent</span>';
+        } else {
+            fb.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>' + (d.message || 'Send error') + '</span>';
+        }
+        setTimeout(() => { fb.innerHTML = ''; }, 3500);
+    })
+    .catch(() => {
+        btn.disabled = false;
+        const fb = document.getElementById('sendFeedback');
+        fb.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Network error</span>';
+        setTimeout(() => { fb.innerHTML = ''; }, 3500);
+    });
 }
 
-function checkState() {
-    const accId = document.getElementById('activeInstanceSelect').value;
-    const badge = document.getElementById('instanceStateBadge');
-    badge.className = 'badge badge-secondary px-2 py-1';
-    badge.innerHTML = '<div class="spinner-border spinner-border-sm me-1" style="width: 10px; height: 10px;"></div> Checking...';
-
-    fetch('/api/whatsapp_chat_api?action=get_state&account_id=' + accId)
-        .then(r => r.json())
-        .then(data => {
-            if (data.state === 'authorized') {
-                badge.className = 'badge badge-success px-2 py-1';
-                badge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size: 7px;"></i> Connected';
-            } else {
-                badge.className = 'badge badge-warning px-2 py-1';
-                badge.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size: 7px;"></i> ' + (data.state || 'Offline');
-            }
-        })
-        .catch(() => {
-            badge.className = 'badge badge-secondary px-2 py-1';
-            badge.innerText = 'Offline';
-        });
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
 }
 
-function showQRModal() {
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('qrModal'));
-    modal.show();
-    const accId = document.getElementById('activeInstanceSelect').value;
-    fetch('/api/whatsapp_chat_api?action=get_qr&account_id=' + accId)
-        .then(r => r.json())
-        .then(data => {
-            if (data.qr) {
-                document.getElementById('qrContainer').innerHTML = '<img src="' + data.qr + '" alt="QR Code" style="max-width: 200px;">';
-            } else {
-                document.getElementById('qrContainer').innerHTML = '<div class="text-muted small p-3">Instance already authorized or QR not required.</div>';
-            }
-        })
-        .catch(err => {
-            document.getElementById('qrContainer').innerHTML = '<div class="text-danger small p-2">Error loading QR: ' + err + '</div>';
-        });
-}
+// Auto check state on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkState();
+});
 </script>
 
 {{ template "footer.html" . }}
