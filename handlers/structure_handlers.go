@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -44,20 +44,19 @@ func ListStructures(c *gin.Context) {
 		}
 
 		q := `
-			SELECT cs.id, cs.client_id, cl.name as client_name, cs.structure_name, cs.created_at,
+			SELECT cs.id, cs.client_id, cl.name as client_name, cs.sheet_name as structure_name,
+			       COALESCE(DATE_FORMAT(cs.created_at, '%d-%b-%Y'), ''),
 			       (SELECT COUNT(*) FROM structure_columns sc WHERE sc.structure_id = cs.id) as column_count
 			FROM client_structures cs
 			JOIN clients cl ON cs.client_id = cl.id
-			ORDER BY cl.name ASC, cs.structure_name ASC
+			ORDER BY cl.name ASC, cs.sheet_name ASC
 		`
 		rows, err := db.Query(q)
 		if err == nil {
 			defer rows.Close()
 			for rows.Next() {
 				var item StructureListItem
-				var rawCreated time.Time
-				_ = rows.Scan(&item.ID, &item.ClientID, &item.ClientName, &item.StructureName, &rawCreated, &item.ColumnCount)
-				item.CreatedAt = rawCreated.Format("02-Jan-2006")
+				_ = rows.Scan(&item.ID, &item.ClientID, &item.ClientName, &item.StructureName, &item.CreatedAt, &item.ColumnCount)
 				structures = append(structures, item)
 			}
 		}
@@ -74,6 +73,9 @@ func SaveStructure(c *gin.Context) {
 	session := sessions.Default(c)
 	clientID, _ := strconv.Atoi(c.PostForm("client_id"))
 	name := strings.TrimSpace(c.PostForm("structure_name"))
+	if name == "" {
+		name = strings.TrimSpace(c.PostForm("sheet_name"))
+	}
 
 	if clientID == 0 || name == "" {
 		session.Set("error", "Client and structure name are required.")
@@ -83,7 +85,7 @@ func SaveStructure(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	res, err := db.Exec("INSERT INTO client_structures (client_id, structure_name, created_at) VALUES (?, ?, NOW())", clientID, name)
+	res, err := db.Exec("INSERT INTO client_structures (client_id, sheet_name, created_at) VALUES (?, ?, NOW())", clientID, name)
 	if err != nil {
 		session.Set("error", "Error creating structure: "+err.Error())
 		_ = session.Save()
@@ -107,7 +109,7 @@ func EditStructure(c *gin.Context) {
 
 	db := database.GetDB()
 	var s models.ClientStructure
-	err := db.QueryRow("SELECT cs.id, cs.client_id, cl.name as client_name, cs.structure_name FROM client_structures cs JOIN clients cl ON cs.client_id = cl.id WHERE cs.id = ?", structID).Scan(
+	err := db.QueryRow("SELECT cs.id, cs.client_id, cl.name as client_name, cs.sheet_name FROM client_structures cs JOIN clients cl ON cs.client_id = cl.id WHERE cs.id = ?", structID).Scan(
 		&s.ID, &s.ClientID, &s.ClientName, &s.StructureName,
 	)
 	if err != nil {
@@ -117,16 +119,20 @@ func EditStructure(c *gin.Context) {
 
 	var columns []models.StructureColumn
 	rows, err := db.Query(`
-		SELECT id, structure_id, column_name, display_name, data_type, is_mandatory, dropdown_options, calculated_formula, calculated_function, order_index
+		SELECT id, structure_id, cell_address, excel_column_name, data_type, nature, COALESCE(default_value, ''), show_in_form, show_in_table
 		FROM structure_columns
 		WHERE structure_id = ?
-		ORDER BY order_index ASC, id ASC
+		ORDER BY id ASC
 	`, structID)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var col models.StructureColumn
-			_ = rows.Scan(&col.ID, &col.StructureID, &col.ColumnName, &col.DisplayName, &col.DataType, &col.IsMandatory, &col.DropdownOptions, &col.CalculatedFormula, &col.CalculatedFunction, &col.OrderIndex)
+			var defVal string
+			_ = rows.Scan(&col.ID, &col.StructureID, &col.CellAddress, &col.ExcelColumnName, &col.DataType, &col.Nature, &defVal, &col.ShowInForm, &col.ShowInTable)
+			col.DefaultValue = sql.NullString{String: defVal, Valid: true}
+			col.DisplayName = col.ExcelColumnName
+			col.ColumnName = col.ExcelColumnName
 			columns = append(columns, col)
 		}
 	}
@@ -142,33 +148,51 @@ func EditStructure(c *gin.Context) {
 func SaveStructureColumn(c *gin.Context) {
 	session := sessions.Default(c)
 	structID, _ := strconv.Atoi(c.PostForm("structure_id"))
-	colName := strings.TrimSpace(c.PostForm("column_name"))
-	dispName := strings.TrimSpace(c.PostForm("display_name"))
+	colName := strings.TrimSpace(c.PostForm("excel_column_name"))
+	if colName == "" {
+		colName = strings.TrimSpace(c.PostForm("display_name"))
+	}
+	if colName == "" {
+		colName = strings.TrimSpace(c.PostForm("column_name"))
+	}
+	cellAddress := strings.ToUpper(strings.TrimSpace(c.PostForm("cell_address")))
+	if cellAddress == "" {
+		cellAddress = "A1"
+	}
 	dataType := strings.TrimSpace(c.PostForm("data_type"))
-	isMandatory, _ := strconv.Atoi(c.PostForm("is_mandatory"))
-	options := strings.TrimSpace(c.PostForm("dropdown_options"))
-	calcFunction := strings.TrimSpace(c.PostForm("calculated_function"))
+	if dataType == "" {
+		dataType = "Text"
+	}
+	nature := strings.TrimSpace(c.PostForm("nature"))
+	if nature == "" {
+		nature = "Optional"
+	}
+	showForm := strings.TrimSpace(c.PostForm("show_in_form"))
+	if showForm == "" {
+		showForm = "Edit"
+	}
+	showTable := strings.TrimSpace(c.PostForm("show_in_table"))
+	if showTable == "" {
+		showTable = "Edit"
+	}
 
-	if structID == 0 || colName == "" || dispName == "" {
-		session.Set("error", "Column name and display label are required.")
+	if structID == 0 || colName == "" {
+		session.Set("error", "Column name is required.")
 		_ = session.Save()
 		c.Redirect(http.StatusFound, fmt.Sprintf("/structures/edit?id=%d", structID))
 		return
 	}
 
-	// Sanitize column name (snake_case)
-	colName = strings.ToLower(strings.ReplaceAll(colName, " ", "_"))
-
 	db := database.GetDB()
 	_, err := db.Exec(`
-		INSERT INTO structure_columns (structure_id, column_name, display_name, data_type, is_mandatory, dropdown_options, calculated_function, order_index)
-		VALUES (?, ?, ?, ?, ?, ?, ?, 99)
-	`, structID, colName, dispName, dataType, isMandatory, options, calcFunction)
+		INSERT INTO structure_columns (structure_id, cell_address, excel_column_name, data_type, nature, default_value, show_in_form, show_in_table)
+		VALUES (?, ?, ?, ?, ?, '', ?, ?)
+	`, structID, cellAddress, colName, dataType, nature, showForm, showTable)
 
 	if err != nil {
 		session.Set("error", "Error adding column: "+err.Error())
 	} else {
-		session.Set("success", fmt.Sprintf("Column '%s' added successfully.", dispName))
+		session.Set("success", fmt.Sprintf("Column '%s' added successfully.", colName))
 	}
 
 	_ = session.Save()

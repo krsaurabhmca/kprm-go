@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"kprm2/database"
 	"kprm2/middleware"
@@ -48,20 +47,33 @@ func ListUsers(c *gin.Context) {
 		}
 
 		q := `
-			SELECT u.id, u.username, u.role_id, r.role_name, 
-			       COALESCE(u.email, ''), COALESCE(u.mobile, ''), COALESCE(u.allowed_task_types, ''), u.created_at
+			SELECT u.id, u.username, COALESCE(u.role_id, 1), COALESCE(r.role_name, 'Admin'), 
+			       COALESCE(u.email, ''), COALESCE(u.mobile, ''),
+			       COALESCE(u.allowed_task_types, ''),
+			       COALESCE(DATE_FORMAT(u.created_at, '%d-%b-%Y'), '')
 			FROM users u
-			JOIN user_roles r ON u.role_id = r.id
+			LEFT JOIN user_roles r ON u.role_id = r.id
 			ORDER BY u.id DESC
 		`
 		rows, err := db.Query(q)
-		if err == nil {
+		if err != nil {
+			qFallback := `
+				SELECT u.id, u.username, COALESCE(u.role_id, 1), COALESCE(r.role_name, 'Admin'), 
+				       COALESCE(u.email, ''), COALESCE(u.mobile, ''),
+				       '',
+				       COALESCE(DATE_FORMAT(u.created_at, '%d-%b-%Y'), '')
+				FROM users u
+				LEFT JOIN user_roles r ON u.role_id = r.id
+				ORDER BY u.id DESC
+			`
+			rows, err = db.Query(qFallback)
+		}
+
+		if err == nil && rows != nil {
 			defer rows.Close()
 			for rows.Next() {
 				var item UserViewItem
-				var rawCreated time.Time
-				_ = rows.Scan(&item.ID, &item.Username, &item.RoleID, &item.RoleName, &item.Email, &item.Mobile, &item.AllowedTaskTypes, &rawCreated)
-				item.CreatedAt = rawCreated.Format("02-Jan-2006")
+				_ = rows.Scan(&item.ID, &item.Username, &item.RoleID, &item.RoleName, &item.Email, &item.Mobile, &item.AllowedTaskTypes, &item.CreatedAt)
 				users = append(users, item)
 			}
 		}
@@ -161,6 +173,16 @@ func ImpersonateUser(c *gin.Context) {
 func DeleteUser(c *gin.Context) {
 	session := sessions.Default(c)
 	userID, _ := strconv.Atoi(c.Param("id"))
+	if userID == 0 {
+		userID, _ = strconv.Atoi(c.PostForm("user_id"))
+	}
+
+	if userID == 1 {
+		session.Set("error", "Cannot delete master administrator.")
+		_ = session.Save()
+		c.Redirect(http.StatusFound, "/users")
+		return
+	}
 
 	db := database.GetDB()
 	_, err := db.Exec("DELETE FROM users WHERE id = ?", userID)

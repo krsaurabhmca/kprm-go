@@ -27,7 +27,7 @@ func ShowCommunicationHub(c *gin.Context) {
 
 	if db != nil {
 		// Accounts
-		aRows, _ := db.Query("SELECT id, channel, account_name, config_json, is_default, status, created_at FROM communication_accounts ORDER BY id ASC")
+		aRows, _ := db.Query("SELECT id, account_type, title, config_json, is_default, status, created_at FROM communication_accounts ORDER BY id ASC")
 		if aRows != nil {
 			defer aRows.Close()
 			for aRows.Next() {
@@ -38,7 +38,7 @@ func ShowCommunicationHub(c *gin.Context) {
 		}
 
 		// Templates
-		tRows, _ := db.Query("SELECT id, event_name, channel, COALESCE(subject, ''), body, is_active FROM communication_templates ORDER BY id ASC")
+		tRows, _ := db.Query("SELECT id, name, channel, COALESCE(subject, ''), body, 1 FROM communication_templates ORDER BY id ASC")
 		if tRows != nil {
 			defer tRows.Close()
 			for tRows.Next() {
@@ -51,7 +51,7 @@ func ShowCommunicationHub(c *gin.Context) {
 		}
 
 		// Task Type Mappings
-		mRows, _ := db.Query("SELECT id, task_type, status, smtp_id, whatsapp_id FROM task_type_communication ORDER BY id ASC")
+		mRows, _ := db.Query("SELECT 0, task_type, status, COALESCE(smtp_account_id, 0), COALESCE(whatsapp_account_id, 0) FROM task_type_communication ORDER BY task_type ASC")
 		if mRows != nil {
 			defer mRows.Close()
 			for mRows.Next() {
@@ -100,11 +100,11 @@ func SaveCommunicationAccount(c *gin.Context) {
 
 	db := database.GetDB()
 	if isDefault == 1 {
-		_, _ = db.Exec("UPDATE communication_accounts SET is_default = 0 WHERE channel = ?", channel)
+		_, _ = db.Exec("UPDATE communication_accounts SET is_default = 0 WHERE account_type = ?", channel)
 	}
 
 	_, err := db.Exec(`
-		INSERT INTO communication_accounts (channel, account_name, config_json, is_default, status, created_at)
+		INSERT INTO communication_accounts (account_type, title, config_json, is_default, status, created_at)
 		VALUES (?, ?, ?, ?, 'active', NOW())
 	`, channel, accountName, string(configJSON), isDefault)
 

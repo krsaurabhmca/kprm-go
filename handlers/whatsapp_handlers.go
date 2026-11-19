@@ -19,7 +19,7 @@ func ShowWhatsAppChat(c *gin.Context) {
 
 	var accounts []models.CommunicationAccount
 	if db != nil {
-		rows, err := db.Query("SELECT id, channel, account_name, config_json, is_default, status, created_at FROM communication_accounts WHERE channel = 'whatsapp' ORDER BY is_default DESC, id ASC")
+		rows, err := db.Query("SELECT id, account_type, title, config_json, is_default, status, created_at FROM communication_accounts WHERE account_type = 'whatsapp' ORDER BY is_default DESC, id ASC")
 		if err == nil {
 			defer rows.Close()
 			for rows.Next() {
@@ -42,9 +42,12 @@ func WhatsAppChatAPI(c *gin.Context) {
 	db := database.GetDB()
 	var configJSON string
 	if accountID > 0 {
-		_ = db.QueryRow("SELECT config_json FROM communication_accounts WHERE id = ? AND channel = 'whatsapp'", accountID).Scan(&configJSON)
+		_ = db.QueryRow("SELECT config_json FROM communication_accounts WHERE id = ? AND account_type = 'whatsapp'", accountID).Scan(&configJSON)
 	} else {
-		_ = db.QueryRow("SELECT config_json FROM communication_accounts WHERE channel = 'whatsapp' AND is_default = 1 LIMIT 1").Scan(&configJSON)
+		_ = db.QueryRow("SELECT config_json FROM communication_accounts WHERE account_type = 'whatsapp' AND is_default = 1 LIMIT 1").Scan(&configJSON)
+		if configJSON == "" {
+			_ = db.QueryRow("SELECT config_json FROM communication_accounts WHERE account_type = 'whatsapp' LIMIT 1").Scan(&configJSON)
+		}
 	}
 
 	var cfg utils.GreenAPIConfig

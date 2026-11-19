@@ -19,14 +19,35 @@ func ManageReports(c *gin.Context) {
 	data := middleware.GetBaseTemplateData(c, "Report Center & MIS", "/reports")
 	db := database.GetDB()
 
-	var clients []models.Client
-	cRows, _ := db.Query("SELECT id, name FROM clients ORDER BY name ASC")
-	if cRows != nil {
-		defer cRows.Close()
-		for cRows.Next() {
-			var cl models.Client
-			_ = cRows.Scan(&cl.ID, &cl.Name)
-			clients = append(clients, cl)
+	type ClientReportItem struct {
+		ID            int
+		Name          string
+		CaseCount     int
+		PositiveCount int
+		PendingCount  int
+	}
+
+	var clients []ClientReportItem
+	if db != nil {
+		q := `
+			SELECT cl.id, cl.name,
+			       COUNT(DISTINCT ca.id) as case_count,
+			       COALESCE(SUM(CASE WHEN ca.status = 'Positive' THEN 1 ELSE 0 END), 0) as positive_count,
+			       COALESCE(SUM(CASE WHEN ca.status NOT IN ('Positive', 'Completed', 'CNV') THEN 1 ELSE 0 END), 0) as pending_count
+			FROM clients cl
+			LEFT JOIN client_structures cs ON cl.id = cs.client_id
+			LEFT JOIN cases ca ON cs.id = ca.structure_id
+			GROUP BY cl.id, cl.name
+			ORDER BY cl.name ASC
+		`
+		rows, err := db.Query(q)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var item ClientReportItem
+				_ = rows.Scan(&item.ID, &item.Name, &item.CaseCount, &item.PositiveCount, &item.PendingCount)
+				clients = append(clients, item)
+			}
 		}
 	}
 
@@ -46,18 +67,18 @@ func GenerateReport(c *gin.Context) {
 
 	db := database.GetDB()
 	var kase models.Case
-	var rawCreated, rawReverted sql.NullString
+	var createdStr string
 	q := `
-		SELECT c.id, c.client_id, cl.name as client_name, c.structure_id, cs.structure_name,
-		       c.overall_status, c.is_closed, c.created_at, c.reverted_date
+		SELECT c.id, COALESCE(cs.client_id, 0), COALESCE(cl.name, 'Client'), c.structure_id, COALESCE(cs.sheet_name, 'Standard'),
+		       COALESCE(c.status, 'Pending'), c.is_closed, COALESCE(DATE_FORMAT(c.created_at, '%d-%b-%Y'), '')
 		FROM cases c
-		LEFT JOIN clients cl ON c.client_id = cl.id
 		LEFT JOIN client_structures cs ON c.structure_id = cs.id
+		LEFT JOIN clients cl ON cs.client_id = cl.id
 		WHERE c.id = ? LIMIT 1
 	`
 	err := db.QueryRow(q, caseID).Scan(
 		&kase.ID, &kase.ClientID, &kase.ClientName, &kase.StructureID, &kase.StructureName,
-		&kase.OverallStatus, &kase.IsClosed, &rawCreated, &rawReverted,
+		&kase.OverallStatus, &kase.IsClosed, &createdStr,
 	)
 	if err != nil {
 		c.String(http.StatusNotFound, "Case not found.")
@@ -67,18 +88,20 @@ func GenerateReport(c *gin.Context) {
 	// Fetch dynamic case fields
 	caseFields := make(map[string]string)
 	cdRows, err := db.Query(`
-		SELECT sc.display_name, sc.column_name, cd.data_value
+		SELECT COALESCE(sc.excel_column_name, ''), COALESCE(cd.data_value, '')
 		FROM case_data cd
 		JOIN structure_columns sc ON cd.column_id = sc.id
 		WHERE cd.case_id = ?
-		ORDER BY sc.order_index ASC, sc.id ASC
+		ORDER BY sc.id ASC
 	`, caseID)
 	if err == nil {
 		defer cdRows.Close()
 		for cdRows.Next() {
-			var dName, cName, dVal sql.NullString
-			_ = cdRows.Scan(&dName, &cName, &dVal)
-			caseFields[dName.String] = dVal.String
+			var colName, dVal string
+			_ = cdRows.Scan(&colName, &dVal)
+			if colName != "" {
+				caseFields[colName] = dVal
+			}
 		}
 	}
 
@@ -140,7 +163,7 @@ func GenerateReport(c *gin.Context) {
 				k,
 				v,
 				kase.OverallStatus,
-				utils.CalculateTAT(rawCreated.String, rawReverted.String),
+				"-",
 			})
 		}
 		for _, t := range tasks {
@@ -165,8 +188,8 @@ func GenerateReport(c *gin.Context) {
 	data["CaseFields"] = caseFields
 	data["TasksTableHTML"] = utils.FormatTaskRemarksTable(tasks, []string{"sr_no", "task_name", "verifier", "verified_at", "status", "remarks"})
 	data["FinancialTableHTML"] = financialHTML
-	data["CreatedAt"] = utils.FormatDateString(rawCreated.String, "02-Jan-2006 15:04")
-	data["TAT"] = utils.CalculateTAT(rawCreated.String, rawReverted.String)
+	data["CreatedAt"] = createdStr
+	data["TAT"] = "-"
 
 	c.HTML(http.StatusOK, "reports/preview.html", data)
 }

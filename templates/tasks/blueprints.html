@@ -22,7 +22,8 @@
                         <th class="ps-3" style="width: 70px;">ID</th>
                         <th>Task Blueprint Name</th>
                         <th>Task Type</th>
-                        <th>Description</th>
+                        <th class="text-center">Configured Fields</th>
+                        <th>Created</th>
                         <th class="text-end pe-3">Actions</th>
                     </tr>
                 </thead>
@@ -31,17 +32,30 @@
                     <tr>
                         <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
                         <td class="fw-bold text-dark">{{ .TaskName }}</td>
-                        <td><span class="badge badge-secondary">{{ .TaskType }}</span></td>
-                        <td class="text-muted">{{ if .Description.Valid }}{{ .Description.String }}{{ else }}-{{ end }}</td>
+                        <td>
+                            {{ if eq .TaskType "PHYSICAL" }}
+                                <span class="badge badge-success"><i class="bi bi-geo-alt me-1"></i>PHYSICAL</span>
+                            {{ else if eq .TaskType "ITO" }}
+                                <span class="badge badge-primary"><i class="bi bi-file-earmark-check me-1"></i>ITO</span>
+                            {{ else if eq .TaskType "BANKING" }}
+                                <span class="badge badge-warning"><i class="bi bi-bank me-1"></i>BANKING</span>
+                            {{ else }}
+                                <span class="badge badge-secondary">{{ .TaskType }}</span>
+                            {{ end }}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-secondary">{{ .FieldCount }} Fields</span>
+                        </td>
+                        <td class="text-muted font-monospace">{{ .CreatedAt }}</td>
                         <td class="text-end pe-3">
-                            <a href="/tasks/meta?task_id={{ .ID }}" class="btn btn-sm btn-secondary me-1" title="Manage Meta Fields">
+                            <a href="/tasks/meta?task_id={{ .ID }}" class="btn btn-sm btn-primary me-1" title="Manage Meta Fields & RBAC">
                                 <i class="bi bi-list-nested me-1"></i> Fields &amp; RBAC
                             </a>
                         </td>
                     </tr>
                     {{ else }}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted fst-italic">No blueprints defined.</td>
+                        <td colspan="6" class="text-center py-4 text-muted fst-italic">No blueprints defined.</td>
                     </tr>
                     {{ end }}
                 </tbody>

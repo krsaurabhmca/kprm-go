@@ -173,16 +173,31 @@ func ManageTasks(c *gin.Context) {
 	data := middleware.GetBaseTemplateData(c, "Task Blueprints", "/tasks/blueprints")
 	db := database.GetDB()
 
-	var blueprints []models.Task
-	rows, err := db.Query("SELECT id, task_name, task_type, COALESCE(description, ''), created_at FROM tasks ORDER BY id DESC")
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			var t models.Task
-			var desc string
-			_ = rows.Scan(&t.ID, &t.TaskName, &t.TaskType, &desc, &t.CreatedAt)
-			t.Description = sql.NullString{String: desc, Valid: true}
-			blueprints = append(blueprints, t)
+	type TaskBlueprintItem struct {
+		ID         int
+		TaskName   string
+		TaskType   string
+		FieldCount int
+		CreatedAt  string
+	}
+
+	var blueprints []TaskBlueprintItem
+	if db != nil {
+		q := `
+			SELECT t.id, t.task_name, t.task_type,
+			       COALESCE((SELECT COUNT(*) FROM task_meta tm WHERE tm.task_id = t.id), 0) as field_count,
+			       COALESCE(DATE_FORMAT(t.created_at, '%d-%b-%Y'), '')
+			FROM tasks t
+			ORDER BY t.id ASC
+		`
+		rows, err := db.Query(q)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var b TaskBlueprintItem
+				_ = rows.Scan(&b.ID, &b.TaskName, &b.TaskType, &b.FieldCount, &b.CreatedAt)
+				blueprints = append(blueprints, b)
+			}
 		}
 	}
 
@@ -195,7 +210,6 @@ func SaveTaskBlueprint(c *gin.Context) {
 	session := sessions.Default(c)
 	taskName := strings.TrimSpace(c.PostForm("task_name"))
 	taskType := strings.ToUpper(strings.TrimSpace(c.PostForm("task_type")))
-	desc := strings.TrimSpace(c.PostForm("description"))
 	taskID, _ := strconv.Atoi(c.PostForm("task_id"))
 
 	if taskName == "" || taskType == "" {
@@ -207,20 +221,21 @@ func SaveTaskBlueprint(c *gin.Context) {
 
 	db := database.GetDB()
 	if taskID > 0 {
-		_, err := db.Exec("UPDATE tasks SET task_name = ?, task_type = ?, description = ? WHERE id = ?", taskName, taskType, desc, taskID)
+		_, err := db.Exec("UPDATE tasks SET task_name = ?, task_type = ? WHERE id = ?", taskName, taskType, taskID)
 		if err != nil {
 			session.Set("error", "Error updating task: "+err.Error())
 		} else {
 			session.Set("success", "Task template updated successfully.")
 		}
 	} else {
-		_, err := db.Exec("INSERT INTO tasks (task_name, task_type, description, created_at) VALUES (?, ?, ?, NOW())", taskName, taskType, desc)
+		_, err := db.Exec("INSERT INTO tasks (task_name, task_type, created_at) VALUES (?, ?, NOW())", taskName, taskType)
 		if err != nil {
 			session.Set("error", "Error creating task: "+err.Error())
 		} else {
-			session.Set("success", "New task template created successfully.")
+			session.Set("success", "Task template created successfully.")
 		}
 	}
+
 	_ = session.Save()
 	c.Redirect(http.StatusFound, "/tasks/blueprints")
 }

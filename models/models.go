@@ -46,9 +46,15 @@ type ClientStructure struct {
 type StructureColumn struct {
 	ID                 int            `json:"id" db:"id"`
 	StructureID        int            `json:"structure_id" db:"structure_id"`
+	CellAddress        string         `json:"cell_address" db:"cell_address"`
+	ExcelColumnName    string         `json:"excel_column_name" db:"excel_column_name"`
 	ColumnName         string         `json:"column_name" db:"column_name"`
 	DisplayName        string         `json:"display_name" db:"display_name"`
 	DataType           string         `json:"data_type" db:"data_type"`
+	Nature             string         `json:"nature" db:"nature"`
+	DefaultValue       sql.NullString `json:"default_value" db:"default_value"`
+	ShowInForm         string         `json:"show_in_form" db:"show_in_form"`
+	ShowInTable        string         `json:"show_in_table" db:"show_in_table"`
 	IsMandatory        int            `json:"is_mandatory" db:"is_mandatory"`
 	DropdownOptions    sql.NullString `json:"dropdown_options" db:"dropdown_options"`
 	CalculatedFormula  sql.NullString `json:"calculated_formula" db:"calculated_formula"`

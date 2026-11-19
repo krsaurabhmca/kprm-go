@@ -191,6 +191,7 @@ func main() {
 		// Clients Management
 		authGroup.GET("/clients", handlers.ListClients)
 		authGroup.POST("/clients", handlers.SaveClient)
+		authGroup.POST("/clients/delete", handlers.DeleteClient)
 		authGroup.POST("/clients/:id/delete", handlers.DeleteClient)
 
 		// Dynamic Schema Builder
@@ -219,6 +220,7 @@ func main() {
 		authGroup.GET("/users", handlers.ListUsers)
 		authGroup.POST("/users", handlers.SaveUser)
 		authGroup.POST("/users/login_as", handlers.ImpersonateUser)
+		authGroup.POST("/users/delete", handlers.DeleteUser)
 		authGroup.POST("/users/:id/delete", handlers.DeleteUser)
 
 		// Document Viewer & System Documentation
