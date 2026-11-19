@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
 	"kprm2/database"
 	"kprm2/middleware"
 	"kprm2/models"
 	"kprm2/utils"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 type CaseListItem struct {
@@ -313,7 +314,15 @@ func CaseStageModalAPI(c *gin.Context) {
 
 // ShowCaseSelect renders Step 1 for case creation
 func ShowCaseSelect(c *gin.Context) {
+	// If structure_id is provided directly in URL (e.g. /cases/new?structure_id=6)
+	structID, _ := strconv.Atoi(c.DefaultQuery("structure_id", c.Query("id")))
+	if structID > 0 {
+		ShowCaseForm(c)
+		return
+	}
+
 	data := middleware.GetBaseTemplateData(c, "New Case - Select Structure", "/cases/new")
+	activeClientID, _ := data["ActiveClientID"].(int)
 	db := database.GetDB()
 
 	var clients []models.Client
@@ -328,12 +337,22 @@ func ShowCaseSelect(c *gin.Context) {
 	}
 
 	var structures []models.ClientStructure
-	sRows, _ := db.Query("SELECT id, client_id, structure_name FROM client_structures ORDER BY structure_name ASC")
+	q := `
+		SELECT cs.id, cs.client_id, cl.name as client_name, cs.sheet_name
+		FROM client_structures cs
+		JOIN clients cl ON cs.client_id = cl.id
+	`
+	if activeClientID > 0 {
+		q += fmt.Sprintf(" WHERE cs.client_id = %d", activeClientID)
+	}
+	q += " ORDER BY cl.name ASC, cs.sheet_name ASC"
+
+	sRows, _ := db.Query(q)
 	if sRows != nil {
 		defer sRows.Close()
 		for sRows.Next() {
 			var cs models.ClientStructure
-			_ = sRows.Scan(&cs.ID, &cs.ClientID, &cs.StructureName)
+			_ = sRows.Scan(&cs.ID, &cs.ClientID, &cs.ClientName, &cs.StructureName)
 			structures = append(structures, cs)
 		}
 	}
@@ -346,38 +365,53 @@ func ShowCaseSelect(c *gin.Context) {
 
 // ShowCaseForm renders Step 2 dynamic form fields
 func ShowCaseForm(c *gin.Context) {
-	structureID, _ := strconv.Atoi(c.DefaultQuery("structure_id", c.PostForm("structure_id")))
-	clientID, _ := strconv.Atoi(c.DefaultQuery("client_id", c.PostForm("client_id")))
-
+	structureID, _ := strconv.Atoi(c.DefaultQuery("structure_id", c.DefaultPostForm("structure_id", c.Query("id"))))
 	if structureID == 0 {
 		c.Redirect(http.StatusFound, "/cases/new")
 		return
 	}
 
 	db := database.GetDB()
-	var sName string
-	_ = db.QueryRow("SELECT structure_name FROM client_structures WHERE id = ?", structureID).Scan(&sName)
+	var s models.ClientStructure
+	err := db.QueryRow(`
+		SELECT cs.id, cs.client_id, cl.name as client_name, cs.sheet_name
+		FROM client_structures cs
+		JOIN clients cl ON cs.client_id = cl.id
+		WHERE cs.id = ?
+	`, structureID).Scan(&s.ID, &s.ClientID, &s.ClientName, &s.StructureName)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/cases/new")
+		return
+	}
 
 	var columns []models.StructureColumn
 	rows, err := db.Query(`
-		SELECT id, structure_id, column_name, display_name, data_type, is_mandatory, dropdown_options, calculated_formula, calculated_function, order_index
+		SELECT id, structure_id, cell_address, excel_column_name, data_type, nature, COALESCE(default_value, ''), show_in_form, show_in_table
 		FROM structure_columns
-		WHERE structure_id = ?
-		ORDER BY order_index ASC, id ASC
+		WHERE structure_id = ? AND show_in_form != 'Hidden'
+		ORDER BY id ASC
 	`, structureID)
-	if err == nil {
+	if err == nil && rows != nil {
 		defer rows.Close()
 		for rows.Next() {
 			var col models.StructureColumn
-			_ = rows.Scan(&col.ID, &col.StructureID, &col.ColumnName, &col.DisplayName, &col.DataType, &col.IsMandatory, &col.DropdownOptions, &col.CalculatedFormula, &col.CalculatedFunction, &col.OrderIndex)
+			var defVal string
+			_ = rows.Scan(&col.ID, &col.StructureID, &col.CellAddress, &col.ExcelColumnName, &col.DataType, &col.Nature, &defVal, &col.ShowInForm, &col.ShowInTable)
+			col.DefaultValue = sql.NullString{String: defVal, Valid: true}
+			col.DisplayName = col.ExcelColumnName
+			col.ColumnName = col.ExcelColumnName
+			if col.Nature == "Mandatory" || col.Nature == "Primary" {
+				col.IsMandatory = 1
+			}
 			columns = append(columns, col)
 		}
 	}
 
-	data := middleware.GetBaseTemplateData(c, fmt.Sprintf("Create Case: %s", sName), "/cases/new")
+	data := middleware.GetBaseTemplateData(c, fmt.Sprintf("Create Case: %s", s.StructureName), "/cases/new")
 	data["StructureID"] = structureID
-	data["ClientID"] = clientID
-	data["StructureName"] = sName
+	data["ClientID"] = s.ClientID
+	data["StructureName"] = s.StructureName
+	data["ClientName"] = s.ClientName
 	data["Columns"] = columns
 
 	c.HTML(http.StatusOK, "cases/wizard.html", data)
@@ -386,13 +420,15 @@ func ShowCaseForm(c *gin.Context) {
 // SaveCase creates new case and records dynamic column values
 func SaveCase(c *gin.Context) {
 	session := sessions.Default(c)
-	structureID, _ := strconv.Atoi(c.PostForm("structure_id"))
-	clientID, _ := strconv.Atoi(c.PostForm("client_id"))
+	structureID, _ := strconv.Atoi(c.DefaultPostForm("structure_id", c.Query("structure_id")))
 	userID, _ := c.Get("user_id")
 	createdByID, _ := userID.(int)
+	if createdByID == 0 {
+		createdByID = 1
+	}
 
-	if structureID == 0 || clientID == 0 {
-		session.Set("error", "Invalid client or structure selected.")
+	if structureID == 0 {
+		session.Set("error", "Invalid structure selected.")
 		_ = session.Save()
 		c.Redirect(http.StatusFound, "/cases/new")
 		return
@@ -400,9 +436,9 @@ func SaveCase(c *gin.Context) {
 
 	db := database.GetDB()
 	res, err := db.Exec(`
-		INSERT INTO cases (client_id, structure_id, created_by, overall_status, is_closed, created_at)
-		VALUES (?, ?, ?, 'Pending', 0, NOW())
-	`, clientID, structureID, createdByID)
+		INSERT INTO cases (structure_id, created_by, status, is_closed, created_at)
+		VALUES (?, ?, 'Pending', 0, NOW())
+	`, structureID, createdByID)
 
 	if err != nil {
 		session.Set("error", "Error creating case: "+err.Error())
@@ -414,26 +450,29 @@ func SaveCase(c *gin.Context) {
 	newCaseID, _ := res.LastInsertId()
 
 	// Insert all dynamic fields into case_data
-	cRows, _ := db.Query("SELECT id, column_name FROM structure_columns WHERE structure_id = ?", structureID)
+	cRows, _ := db.Query("SELECT id, excel_column_name, data_type FROM structure_columns WHERE structure_id = ?", structureID)
 	if cRows != nil {
 		defer cRows.Close()
 		for cRows.Next() {
 			var colID int
-			var colName string
-			_ = cRows.Scan(&colID, &colName)
+			var colName, dType string
+			_ = cRows.Scan(&colID, &colName, &dType)
 
-			val := c.PostForm(fmt.Sprintf("col_%d", colID))
+			val := strings.TrimSpace(c.PostForm(fmt.Sprintf("col_%d", colID)))
 			if val == "" {
-				val = c.PostForm(colName)
+				val = strings.TrimSpace(c.PostForm(fmt.Sprintf("data[%d]", colID)))
+			}
+			if val == "" {
+				val = strings.TrimSpace(c.PostForm(colName))
 			}
 
 			_, _ = db.Exec("INSERT INTO case_data (case_id, column_id, data_value) VALUES (?, ?, ?)", newCaseID, colID, val)
 		}
 	}
 
-	session.Set("success", fmt.Sprintf("Case #%d created successfully!", newCaseID))
+	session.Set("success", fmt.Sprintf("Case #%d created successfully! You can now assign verification tasks.", newCaseID))
 	_ = session.Save()
-	c.Redirect(http.StatusFound, fmt.Sprintf("/cases/view?id=%d", newCaseID))
+	c.Redirect(http.StatusFound, fmt.Sprintf("/tasks?case_id=%d", newCaseID))
 }
 
 // DeleteCase removes a case and its related records
@@ -469,4 +508,3 @@ func CloseCase(c *gin.Context) {
 	_ = session.Save()
 	c.Redirect(http.StatusFound, fmt.Sprintf("/cases/view?id=%d", caseID))
 }
-

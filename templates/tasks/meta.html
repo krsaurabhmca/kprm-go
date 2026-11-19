@@ -1,138 +1,268 @@
 {{ template "header.html" . }}
 
 <div class="content-body p-4 wizard-container">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">Task Metadata &amp; RBAC</h1>
-            <p class="text-secondary small mb-0">Configure dynamic verification fields and role permissions for task blueprints</p>
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="h3 fw-bold text-dark mb-0">Blueprint: {{ .Task.TaskName }}</h1>
+                <span class="badge {{ if eq .Task.TaskType "PHYSICAL" }}badge-success{{ else if eq .Task.TaskType "ITO" }}badge-primary{{ else }}badge-warning{{ end }}">{{ .Task.TaskType }}</span>
+            </div>
+            <p class="text-secondary small mb-0 mt-1">Configure verification input fields, role RBAC permissions, and automated remark templates</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#metaFieldModal" onclick="openCreateFieldModal()">
+                <i class="bi bi-plus-lg me-1"></i> Add Input Field
+            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#remarkModal" onclick="openCreateRemarkModal()">
+                <i class="bi bi-chat-left-text me-1"></i> Add Remark Template
+            </button>
             <a href="/tasks/blueprints" class="btn btn-secondary btn-sm">
                 <i class="bi bi-arrow-left me-1"></i> Back to Blueprints
             </a>
         </div>
     </div>
 
-    <!-- Task Selector Strip -->
-    <div class="card mb-4">
-        <form action="/tasks/meta" method="GET" class="row g-2 align-items-center">
-            <div class="col-12 col-md-8">
-                <select name="task_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">-- Choose Task Blueprint --</option>
-                    {{ range .Tasks }}
-                        <option value="{{ .ID }}" {{ if eq $.SelectedTaskID .ID }}selected{{ end }}>
-                            {{ .TaskName }} ({{ .TaskType }})
-                        </option>
-                    {{ end }}
-                </select>
-            </div>
-            <div class="col-12 col-md-4 text-md-end">
-                {{ if .SelectedTaskID }}
-                <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newMetaModal">
-                    <i class="bi bi-plus-lg me-1"></i> Add Meta Field
-                </button>
-                {{ end }}
-            </div>
-        </form>
-    </div>
-
-    {{ if .SelectedTaskID }}
-    <!-- Meta Fields List -->
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                <thead>
-                    <tr>
-                        <th class="ps-3" style="width: 70px;">ID</th>
-                        <th>Field Key</th>
-                        <th>Display Label</th>
-                        <th>Input Type</th>
-                        <th class="text-center">Required</th>
-                        <th>Options (Dropdown)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ range .MetaFields }}
-                    <tr>
-                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
-                        <td class="font-monospace text-dark">{{ .MetaKey }}</td>
-                        <td class="fw-semibold">{{ .DisplayName }}</td>
-                        <td><span class="badge badge-secondary">{{ .DataType }}</span></td>
-                        <td class="text-center">
-                            {{ if eq .IsRequired 1 }}
-                                <span class="badge badge-danger">Yes</span>
+    <div class="row g-4">
+        <!-- Left Column: Input Fields & RBAC -->
+        <div class="col-12 col-xl-7">
+            <div class="card overflow-hidden p-0 mb-4">
+                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fs-14 fw-bold text-dark mb-0">
+                        <i class="bi bi-list-check me-2 text-primary"></i> Verification Input Fields ({{ len .MetaFields }})
+                    </h5>
+                    <span class="text-muted fs-11">Auto-synced with #tags#</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">Field Name</th>
+                                <th>Type</th>
+                                <th>Tag</th>
+                                <th class="text-center">Req</th>
+                                <th class="text-center">In Table</th>
+                                <th class="text-center">In Msg</th>
+                                <th class="text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .MetaFields }}
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark">
+                                    {{ .FieldName }}
+                                    {{ if .ListOptions.Valid }}
+                                        {{ if .ListOptions.String }}
+                                            <div class="text-muted fs-11 fw-normal">Opts: {{ .ListOptions.String }}</div>
+                                        {{ end }}
+                                    {{ end }}
+                                </td>
+                                <td><span class="badge badge-secondary fs-10">{{ .DataType }}</span></td>
+                                <td class="font-monospace text-primary fs-11">{{ if .VariableTag.Valid }}{{ .VariableTag.String }}{{ else }}-{{ end }}</td>
+                                <td class="text-center">
+                                    {{ if eq .IsMandatory 1 }}
+                                        <span class="badge badge-danger fs-10">Yes</span>
+                                    {{ else }}
+                                        <span class="badge badge-secondary fs-10">No</span>
+                                    {{ end }}
+                                </td>
+                                <td class="text-center">
+                                    <form action="/tasks/meta/toggle" method="POST" style="display:inline;">
+                                        <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                        <input type="hidden" name="meta_id" value="{{ .ID }}">
+                                        <input type="hidden" name="flag" value="show_in_details">
+                                        <button type="submit" class="btn btn-sm py-0 px-2 {{ if eq .ShowInDetails 1 }}btn-success{{ else }}btn-outline-secondary{{ end }}" style="font-size: 11px;">
+                                            {{ if eq .ShowInDetails 1 }}<i class="bi bi-eye"></i> Show{{ else }}<i class="bi bi-eye-slash"></i> Hide{{ end }}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-center">
+                                    <form action="/tasks/meta/toggle" method="POST" style="display:inline;">
+                                        <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                        <input type="hidden" name="meta_id" value="{{ .ID }}">
+                                        <input type="hidden" name="flag" value="send_in_message">
+                                        <button type="submit" class="btn btn-sm py-0 px-2 {{ if eq .SendInMessage 1 }}btn-primary{{ else }}btn-outline-secondary{{ end }}" style="font-size: 11px;">
+                                            {{ if eq .SendInMessage 1 }}<i class="bi bi-chat-check"></i> Yes{{ else }}<i class="bi bi-chat-x"></i> No{{ end }}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <form action="/tasks/meta/field/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this verification field?');">
+                                        <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                        <input type="hidden" name="meta_id" value="{{ .ID }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Delete Field">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                             {{ else }}
-                                <span class="badge badge-secondary">No</span>
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted fst-italic">No input fields configured. Click "Add Input Field" or create Remarks with #tags#.</td>
+                            </tr>
                             {{ end }}
-                        </td>
-                        <td class="text-muted small">{{ if .Options.Valid }}{{ .Options.String }}{{ else }}-{{ end }}</td>
-                    </tr>
-                    {{ else }}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted fst-italic">No meta fields defined for this blueprint yet.</td>
-                    </tr>
-                    {{ end }}
-                </tbody>
-            </table>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- New Meta Modal -->
-    <div class="modal fade" id="newMetaModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="/tasks/meta" method="POST">
-                    <input type="hidden" name="task_id" value="{{ .SelectedTaskID }}">
-                    <div class="modal-header bg-light">
-                        <h5 class="modal-title fs-15 fw-bold">Add Verification Meta Field</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- Right Column: Standard Remarks & Automation -->
+        <div class="col-12 col-xl-5">
+            <div class="card p-0 overflow-hidden mb-4">
+                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title fs-14 fw-bold text-dark mb-0">
+                        <i class="bi bi-chat-quote me-2 text-success"></i> Standard Remark Templates ({{ len .Remarks }})
+                    </h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fs-11" data-bs-toggle="modal" data-bs-target="#remarkModal" onclick="openCreateRemarkModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Add
+                    </button>
+                </div>
+                <div class="list-group list-group-flush fs-13">
+                    {{ range .Remarks }}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge {{ if eq .RemarkType "Positive" }}badge-success{{ else if eq .RemarkType "Negative" }}badge-danger{{ else }}badge-warning{{ end }} text-uppercase">
+                                {{ .RemarkType }} Outcome
+                            </span>
+                            <form action="/tasks/meta/remark/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this remark template?');">
+                                <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                <input type="hidden" name="remark_id" value="{{ .ID }}">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0 fs-12 text-decoration-none" title="Delete">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                        <div class="p-2 bg-light rounded border text-secondary font-monospace fs-11" style="white-space: pre-wrap;">{{ .RemarkText }}</div>
                     </div>
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Field Key <span class="text-danger">*</span></label>
-                            <input type="text" name="meta_key" class="form-control" placeholder="e.g. met_person_name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Display Label <span class="text-danger">*</span></label>
-                            <input type="text" name="display_name" class="form-control" placeholder="e.g. Person Met During Visit" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Input Type <span class="text-danger">*</span></label>
-                            <select name="data_type" class="form-select" required>
-                                <option value="text">Single Line Text</option>
-                                <option value="textarea">Multi-line Textarea</option>
-                                <option value="dropdown">Dropdown Select</option>
-                                <option value="date">Date Picker</option>
-                                <option value="file">File / Photo Upload</option>
-                                <option value="financial_grid">Financial Statement 10-Param Grid</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Is Mandatory?</label>
-                            <select name="is_required" class="form-select">
-                                <option value="0">Optional</option>
-                                <option value="1">Mandatory</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Dropdown Options (Comma separated)</label>
-                            <input type="text" name="options" class="form-control" placeholder="Self, Spouse, Father, Mother, Neighbor">
+                    {{ else }}
+                    <div class="p-4 text-center text-muted fst-italic">No predefined remarks. Click "Add Remark Template" above.</div>
+                    {{ end }}
+                </div>
+                <div class="card-footer bg-light p-3 border-top">
+                    <div class="d-flex align-items-start gap-2 fs-12 text-muted">
+                        <i class="bi bi-info-circle-fill text-primary mt-1"></i>
+                        <div>
+                            <strong>Dynamic #tags# feature:</strong> Writing tags such as <code>#applicant_name#</code> or <code>#address#</code> in your remarks will auto-generate them as input fields!
                         </div>
                     </div>
-                    <div class="modal-footer bg-light">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-sm btn-primary">Save Field</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
-    {{ else }}
-    <div class="card p-5 text-center text-muted">
-        <i class="bi bi-kanban fs-1 mb-2 text-secondary"></i>
-        <h5>Please select a task blueprint above to manage its metadata.</h5>
-    </div>
-    {{ end }}
 </div>
+
+<!-- Add/Edit Field Modal -->
+<div class="modal fade" id="metaFieldModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/tasks/meta/field" method="POST" id="fieldForm">
+                <input type="hidden" name="task_id" value="{{ .TaskID }}">
+                <input type="hidden" name="meta_id" id="field_meta_id" value="0">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-15 fw-bold" id="fieldModalTitle">Add Verification Field</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Field Label / Name <span class="text-danger">*</span></label>
+                        <input type="text" name="field_name" id="field_name" class="form-control" placeholder="e.g. Electricity Meter Number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Variable Tag (for auto-filling remarks)</label>
+                        <input type="text" name="variable_tag" id="field_tag" class="form-control font-monospace" placeholder="e.g. #meter_no#">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Input Data Type <span class="text-danger">*</span></label>
+                        <select name="data_type" id="field_type" class="form-select" required>
+                            <option value="Text">Text (Single Line)</option>
+                            <option value="Number">Number / Amount</option>
+                            <option value="Date">Date</option>
+                            <option value="File">Photo / Document Upload</option>
+                            <option value="List">Dropdown Selection</option>
+                            <option value="Boolean">Yes / No Toggle</option>
+                            <option value="Long text">Long Remarks (Textarea)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Dropdown Options (if Type is List)</label>
+                        <input type="text" name="list_options" id="field_options" class="form-control" placeholder="Option 1, Option 2, Option 3">
+                    </div>
+                    <div class="d-flex gap-3 mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_mandatory" id="field_mandatory" value="1">
+                            <label class="form-check-label fs-13" for="field_mandatory">Mandatory Field</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="show_in_details" id="field_details" value="1">
+                            <label class="form-check-label fs-13" for="field_details">Show in Table</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="send_in_message" id="field_message" value="1" checked>
+                            <label class="form-check-label fs-13" for="field_message">Include in WhatsApp</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Field</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Remark Modal -->
+<div class="modal fade" id="remarkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="/tasks/meta/remark" method="POST">
+                <input type="hidden" name="task_id" value="{{ .TaskID }}">
+                <input type="hidden" name="remark_id" id="remark_id" value="0">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-15 fw-bold">Create Standard Remark Template</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Target Verification Outcome <span class="text-danger">*</span></label>
+                        <select name="remark_type" id="modal_remark_type" class="form-select" required>
+                            <option value="Positive">Positive</option>
+                            <option value="Negative">Negative</option>
+                            <option value="CNV">CNV (Could Not Verify)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Remark Text (Use #tags# for auto-fill) <span class="text-danger">*</span></label>
+                        <textarea name="remark_text" id="modal_remark_text" rows="5" class="form-control font-monospace fs-12" placeholder="e.g. Field executive met with #met_with# at address #address#. Staying since #years# years." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Remark</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCreateFieldModal() {
+    document.getElementById('field_meta_id').value = '0';
+    document.getElementById('fieldModalTitle').innerText = 'Add Verification Field';
+    document.getElementById('field_name').value = '';
+    document.getElementById('field_tag').value = '';
+    document.getElementById('field_type').value = 'Text';
+    document.getElementById('field_options').value = '';
+    document.getElementById('field_mandatory').checked = false;
+    document.getElementById('field_details').checked = false;
+    document.getElementById('field_message').checked = true;
+}
+
+function openCreateRemarkModal() {
+    document.getElementById('remark_id').value = '0';
+    document.getElementById('modal_remark_type').value = 'Positive';
+    document.getElementById('modal_remark_text').value = '';
+}
+</script>
 
 {{ template "footer.html" . }}

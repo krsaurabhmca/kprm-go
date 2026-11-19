@@ -4,7 +4,8 @@
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h1 class="h3 fw-bold text-dark mb-1">Field Verification Queue</h1>
-            <p class="text-secondary small mb-0">Record physical visit findings, financial audit numbers, and upload evidence</p>
+            <p class="text-secondary small mb-0">Record physical visit findings, financial audit numbers, and upload
+                evidence</p>
         </div>
     </div>
 
@@ -12,12 +13,15 @@
     <div class="card mb-4">
         <form action="/process" method="GET" class="row g-2 align-items-center">
             <div class="col-12 col-md-6">
-                <input type="text" name="search" class="form-control form-control-sm" placeholder="Search Task ID, Applicant, or Case #..." value="{{ .Search }}">
+                <input type="text" name="search" class="form-control form-control-sm"
+                    placeholder="Search Task ID, Applicant, or Case #..." value="{{ .Search }}">
             </div>
             <div class="col-6 col-md-4">
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="In Progress" {{ if eq .StatusFilter "In Progress" }}selected{{ end }}>In Progress (Assigned to Me)</option>
-                    <option value="Review Pending" {{ if eq .StatusFilter "Review Pending" }}selected{{ end }}>Review Pending (Submitted)</option>
+                    <option value="In Progress" {{ if eq .StatusFilter "In Progress" }}selected{{ end }}>In Progress
+                        (Assigned to Me)</option>
+                    <option value="Review Pending" {{ if eq .StatusFilter "Review Pending" }}selected{{ end }}>Review
+                        Pending (Submitted)</option>
                     <option value="ALL" {{ if eq .StatusFilter "ALL" }}selected{{ end }}>-- All Statuses --</option>
                 </select>
             </div>
@@ -57,14 +61,16 @@
                         <td class="text-center">{{ safeHTML .StatusBadge }}</td>
                         <td class="text-muted font-monospace">{{ .CreatedAt }}</td>
                         <td class="text-end pe-3">
-                            <button type="button" class="btn btn-sm btn-primary shadow-sm" onclick="openVerificationModal({{ .ID }}, '{{ .TaskName }}')">
+                            <button type="button" class="btn btn-sm btn-primary shadow-sm"
+                                onclick="openVerificationModal({{ .ID }}, '{{ .TaskName }}')">
                                 <i class="bi bi-pencil-square me-1"></i> Verify &amp; Submit
                             </button>
                         </td>
                     </tr>
                     {{ else }}
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted fst-italic">No verification tasks in this queue.</td>
+                        <td colspan="8" class="text-center py-4 text-muted fst-italic">No verification tasks in this
+                            queue.</td>
                     </tr>
                     {{ end }}
                 </tbody>
@@ -99,21 +105,21 @@
 </div>
 
 <script>
-function openVerificationModal(taskId, taskName) {
-    const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
-    document.getElementById('verifyModalTitle').innerText = 'Verification: ' + taskName + ' (Task #' + taskId + ')';
-    document.getElementById('verifyModalBody').innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Loading form fields & financial comparison...</div>';
-    modal.show();
+    function openVerificationModal(taskId, taskName) {
+        const modal = new bootstrap.Modal(document.getElementById('verificationModal'));
+        document.getElementById('verifyModalTitle').innerText = 'Verification: ' + taskName + ' (Task #' + taskId + ')';
+        document.getElementById('verifyModalBody').innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary me-2"></div> Loading form fields & financial comparison...</div>';
+        modal.show();
 
-    fetch('/api/get_task_form?case_task_id=' + taskId)
-        .then(r => r.text())
-        .then(html => {
-            document.getElementById('verifyModalBody').innerHTML = html;
-        })
-        .catch(err => {
-            document.getElementById('verifyModalBody').innerHTML = '<div class="alert alert-danger">Error loading form: ' + err + '</div>';
-        });
-}
+        fetch('/api/get_task_form?case_task_id=' + taskId)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('verifyModalBody').innerHTML = html;
+            })
+            .catch(err => {
+                document.getElementById('verifyModalBody').innerHTML = '<div class="alert alert-danger">Error loading form: ' + err + '</div>';
+            });
+    }
 </script>
 
 {{ template "footer.html" . }}

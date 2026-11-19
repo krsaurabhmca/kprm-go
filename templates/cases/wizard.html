@@ -2,55 +2,82 @@
 
 <div class="content-body p-4 wizard-container">
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
+        <div class="col-12 col-lg-9">
             <div class="card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
                     <div>
-                        <h3 class="fw-bold text-dark mb-1">Case Data Entry</h3>
-                        <p class="text-secondary small mb-0">Structure: <strong class="text-primary">{{ .StructureName
-                                }}</strong></p>
+                        <div class="d-flex align-items-center gap-2">
+                            <h3 class="fw-bold text-dark mb-0">Case Ingestion</h3>
+                            <span class="badge badge-primary">{{ .ClientName }}</span>
+                        </div>
+                        <p class="text-secondary small mb-0 mt-1">Structure: <strong class="text-dark">{{ .StructureName }}</strong> &bull; Fill required verification details below</p>
                     </div>
-                    <a href="/cases/new" class="btn btn-sm btn-secondary">Change Structure</a>
+                    <a href="/cases/new" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Change Structure
+                    </a>
                 </div>
 
-                <form action="/cases/new" method="POST">
+                <form action="/cases/new" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="structure_id" value="{{ .StructureID }}">
                     <input type="hidden" name="client_id" value="{{ .ClientID }}">
 
                     <div class="row g-3">
                         {{ range .Columns }}
-                        <div class="col-12 {{ if eq .DataType " textarea" }}col-12{{ else }}col-md-6{{ end }}">
+                        <div class="col-12 {{ if or (eq .DataType "Long text") (eq .DataType "textarea") }}col-12{{ else }}col-md-6{{ end }}">
                             <label class="form-label fs-13 fw-semibold text-secondary">
-                                {{ .DisplayName }}
+                                {{ .ExcelColumnName }}
                                 {{ if eq .IsMandatory 1 }}<span class="text-danger">*</span>{{ end }}
+                                <span class="badge bg-light text-muted border py-0 px-1 font-monospace ms-1 fs-10">{{ .CellAddress }}</span>
                             </label>
 
-                            {{ if eq .DataType "textarea" }}
-                            <textarea name="col_{{ .ID }}" class="form-control" rows="3" {{ if eq .IsMandatory 1
-                                }}required{{ end }}></textarea>
-                            {{ else if eq .DataType "dropdown" }}
-                            <select name="col_{{ .ID }}" class="form-select" {{ if eq .IsMandatory 1 }}required{{ end
-                                }}>
-                                <option value="">-- Select --</option>
-                            </select>
-                            {{ else if eq .DataType "date" }}
-                            <input type="date" name="col_{{ .ID }}" class="form-control" {{ if eq .IsMandatory 1
-                                }}required{{ end }}>
+                            {{ if or (eq .DataType "Long text") (eq .DataType "textarea") }}
+                                <textarea name="col_{{ .ID }}" class="form-control form-control-sm" rows="3"
+                                          placeholder="Enter {{ .ExcelColumnName }}"
+                                          {{ if eq .IsMandatory 1 }}required{{ end }}
+                                          {{ if eq .ShowInForm "Readonly" }}readonly{{ end }}>{{ if .DefaultValue.Valid }}{{ .DefaultValue.String }}{{ end }}</textarea>
+                            {{ else if or (eq .DataType "List") (eq .DataType "dropdown") }}
+                                <select name="col_{{ .ID }}" class="form-select form-select-sm" {{ if eq .IsMandatory 1 }}required{{ end }}>
+                                    <option value="">-- Choose Option --</option>
+                                    {{ if .DefaultValue.Valid }}
+                                        <option value="{{ .DefaultValue.String }}" selected>{{ .DefaultValue.String }}</option>
+                                    {{ end }}
+                                </select>
+                            {{ else if eq .DataType "Date" }}
+                                <input type="date" name="col_{{ .ID }}" class="form-control form-control-sm"
+                                       value="{{ if .DefaultValue.Valid }}{{ .DefaultValue.String }}{{ end }}"
+                                       {{ if eq .IsMandatory 1 }}required{{ end }}
+                                       {{ if eq .ShowInForm "Readonly" }}readonly{{ end }}>
+                            {{ else if eq .DataType "Number" }}
+                                <input type="number" step="any" name="col_{{ .ID }}" class="form-control form-control-sm"
+                                       placeholder="Enter number / amount"
+                                       value="{{ if .DefaultValue.Valid }}{{ .DefaultValue.String }}{{ end }}"
+                                       {{ if eq .IsMandatory 1 }}required{{ end }}
+                                       {{ if eq .ShowInForm "Readonly" }}readonly{{ end }}>
+                            {{ else if eq .DataType "File" }}
+                                <input type="file" name="col_{{ .ID }}" class="form-control form-control-sm"
+                                       {{ if eq .IsMandatory 1 }}required{{ end }}>
+                            {{ else if eq .DataType "Boolean" }}
+                                <select name="col_{{ .ID }}" class="form-select form-select-sm">
+                                    <option value="Yes" {{ if eq .DefaultValue.String "Yes" }}selected{{ end }}>Yes</option>
+                                    <option value="No" {{ if eq .DefaultValue.String "No" }}selected{{ end }}>No</option>
+                                </select>
                             {{ else }}
-                            <input type="text" name="col_{{ .ID }}" class="form-control"
-                                placeholder="Enter {{ .DisplayName }}" {{ if eq .IsMandatory 1 }}required{{ end }}>
+                                <input type="text" name="col_{{ .ID }}" class="form-control form-control-sm"
+                                       placeholder="Enter {{ .ExcelColumnName }}"
+                                       value="{{ if .DefaultValue.Valid }}{{ .DefaultValue.String }}{{ end }}"
+                                       {{ if eq .IsMandatory 1 }}required{{ end }}
+                                       {{ if eq .ShowInForm "Readonly" }}readonly{{ end }}>
                             {{ end }}
                         </div>
                         {{ else }}
-                        <div class="col-12 text-center py-4 text-muted">No dynamic schema columns defined for this
-                            structure.</div>
+                        <div class="col-12 text-center py-4 text-muted fst-italic">No columns configured for this structure.</div>
                         {{ end }}
                     </div>
 
-                    <div class="mt-4 pt-3 border-top text-end">
-                        <a href="/cases/new" class="btn btn-secondary px-4 me-2">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4 fw-semibold">
-                            <i class="bi bi-check-lg me-1"></i> Save &amp; Create Case
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <a href="/cases/new" class="btn btn-secondary btn-sm px-3">Back</a>
+                        <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                            <i class="bi bi-check-circle me-1"></i> Ingest &amp; Proceed to Tasks
                         </button>
                     </div>
                 </form>

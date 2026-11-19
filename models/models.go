@@ -147,29 +147,38 @@ type CaseTaskData struct {
 
 // TaskMeta represents configurable meta fields for a task
 type TaskMeta struct {
-	ID          int            `json:"id" db:"id"`
-	TaskID      int            `json:"task_id" db:"task_id"`
-	MetaKey     string         `json:"meta_key" db:"meta_key"`
-	DisplayName string         `json:"display_name" db:"display_name"`
-	DataType    string         `json:"data_type" db:"data_type"` // 'text', 'textarea', 'dropdown', 'date', 'file', 'financial_grid'
-	IsRequired  int            `json:"is_required" db:"is_required"`
-	Options     sql.NullString `json:"options" db:"options"`
-	OrderIndex  int            `json:"order_index" db:"order_index"`
+	ID            int            `json:"id" db:"id"`
+	TaskID        int            `json:"task_id" db:"task_id"`
+	VariableTag   sql.NullString `json:"variable_tag" db:"variable_tag"`
+	FieldName     string         `json:"field_name" db:"field_name"`
+	DataType      string         `json:"data_type" db:"data_type"`
+	IsMandatory   int            `json:"is_mandatory" db:"is_mandatory"`
+	ShowInDetails int            `json:"show_in_details" db:"show_in_details"`
+	ListOptions   sql.NullString `json:"list_options" db:"list_options"`
+	SendInMessage int            `json:"send_in_message" db:"send_in_message"`
+	RBAC          map[int]string `json:"rbac"`
+	// Aliases
+	DisplayName   string         `json:"display_name"`
+	MetaKey       string         `json:"meta_key"`
+	IsRequired    int            `json:"is_required"`
 }
 
 // TaskMetaRBAC represents role-based field visibility
 type TaskMetaRBAC struct {
-	ID         int    `json:"id" db:"id"`
-	TaskMetaID int    `json:"task_meta_id" db:"task_meta_id"`
-	RoleID     int    `json:"role_id" db:"role_id"`
-	Visibility string `json:"visibility" db:"visibility"` // 'hidden', 'readonly', 'editable'
+	ID          int    `json:"id" db:"id"`
+	TaskMetaID  int    `json:"task_meta_id" db:"task_meta_id"`
+	RoleID      int    `json:"role_id" db:"role_id"`
+	AccessLevel string `json:"access_level" db:"access_level"`
+	Visibility  string `json:"visibility" db:"visibility"`
 }
 
 // TaskRemarks holds standard remarks templates
 type TaskRemarks struct {
 	ID             int    `json:"id" db:"id"`
 	TaskID         int    `json:"task_id" db:"task_id"`
-	Status         string `json:"status" db:"status"` // 'Positive', 'Negative', 'CNV'
+	RemarkType     string `json:"remark_type" db:"remark_type"`
+	RemarkText     string `json:"remark_text" db:"remark_text"`
+	Status         string `json:"status" db:"status"`
 	RemarkTemplate string `json:"remark_template" db:"remark_template"`
 }
 

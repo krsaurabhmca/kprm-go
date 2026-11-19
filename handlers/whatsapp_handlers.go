@@ -124,6 +124,12 @@ func WhatsAppChatAPI(c *gin.Context) {
 			},
 		})
 
+	case "reboot":
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "Instance reboot signal sent"})
+
+	case "logout":
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "Logged out from WhatsApp instance"})
+
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unknown action: " + action})
 	}

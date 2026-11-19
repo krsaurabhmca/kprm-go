@@ -112,10 +112,11 @@ func main() {
 	r.POST("/case_form.php", handlers.SaveCase)
 
 	r.GET("/case_tasks.php", redirectWithQuery("/tasks"))
+	r.POST("/case_tasks.php", handlers.HandleLegacyCaseTasksPost)
 	r.GET("/manage_tasks.php", redirectWithQuery("/tasks/blueprints"))
 	r.POST("/manage_tasks.php", handlers.SaveTaskBlueprint)
 	r.GET("/manage_task_meta.php", redirectWithQuery("/tasks/meta"))
-	r.POST("/manage_task_meta.php", handlers.SaveTaskMeta)
+	r.POST("/manage_task_meta.php", handlers.SaveTaskMetaField)
 	r.GET("/manage_task_formats.php", redirectWithQuery("/tasks/formats"))
 
 	r.GET("/process_tasks.php", redirectWithQuery("/process"))
@@ -174,10 +175,19 @@ func main() {
 		// Task Assignment & Operations (Clean URLs)
 		authGroup.GET("/tasks", handlers.ListTasks)
 		authGroup.POST("/tasks/assign", handlers.AssignTask)
+		authGroup.POST("/tasks/status", handlers.UpdateCaseTaskStatus)
+		authGroup.POST("/tasks/update_status", handlers.UpdateCaseTaskStatus)
+		authGroup.POST("/tasks/add", handlers.AddCaseTask)
+		authGroup.POST("/tasks/delete", handlers.DeleteCaseTask)
 		authGroup.GET("/tasks/blueprints", handlers.ManageTasks)
 		authGroup.POST("/tasks/blueprints", handlers.SaveTaskBlueprint)
 		authGroup.GET("/tasks/meta", handlers.ManageTaskMeta)
-		authGroup.POST("/tasks/meta", handlers.SaveTaskMeta)
+		authGroup.POST("/tasks/meta", handlers.SaveTaskMetaField)
+		authGroup.POST("/tasks/meta/field", handlers.SaveTaskMetaField)
+		authGroup.POST("/tasks/meta/field/delete", handlers.DeleteTaskMetaField)
+		authGroup.POST("/tasks/meta/toggle", handlers.ToggleTaskMetaFlag)
+		authGroup.POST("/tasks/meta/remark", handlers.SaveTaskRemark)
+		authGroup.POST("/tasks/meta/remark/delete", handlers.DeleteTaskRemark)
 		authGroup.GET("/tasks/formats", handlers.ManageTaskFormats)
 
 		// Field Verification (Verifier)
@@ -191,6 +201,8 @@ func main() {
 		// Clients Management
 		authGroup.GET("/clients", handlers.ListClients)
 		authGroup.POST("/clients", handlers.SaveClient)
+		authGroup.GET("/clients/focus", handlers.FocusClient)
+		authGroup.GET("/clients/:id/focus", handlers.FocusClient)
 		authGroup.POST("/clients/delete", handlers.DeleteClient)
 		authGroup.POST("/clients/:id/delete", handlers.DeleteClient)
 
@@ -198,6 +210,8 @@ func main() {
 		authGroup.GET("/structures", handlers.ListStructures)
 		authGroup.POST("/structures", handlers.SaveStructure)
 		authGroup.GET("/structures/edit", handlers.EditStructure)
+		authGroup.POST("/structures/edit", handlers.SaveStructureColumns)
+		authGroup.POST("/edit_structure.php", handlers.SaveStructureColumns)
 		authGroup.POST("/structure_columns/new", handlers.SaveStructureColumn)
 		authGroup.POST("/structure_columns/:id/delete", handlers.DeleteStructureColumn)
 
@@ -209,6 +223,11 @@ func main() {
 		authGroup.GET("/whatsapp", handlers.ShowWhatsAppChat)
 		authGroup.GET("/communication", handlers.ShowCommunicationHub)
 		authGroup.POST("/communication/account", handlers.SaveCommunicationAccount)
+		authGroup.GET("/communication/account/default", handlers.SetDefaultCommunicationAccount)
+		authGroup.POST("/communication/account/delete", handlers.DeleteCommunicationAccount)
+		authGroup.POST("/communication/template", handlers.SaveCommunicationTemplate)
+		authGroup.POST("/communication/template/delete", handlers.DeleteCommunicationTemplate)
+		authGroup.POST("/communication/client_route", handlers.SaveClientCommunicationRoute)
 		authGroup.POST("/communication/test", handlers.SendTestCommunication)
 
 		// Settings & DEV Tools

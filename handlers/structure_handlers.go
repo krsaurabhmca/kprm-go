@@ -144,6 +144,90 @@ func EditStructure(c *gin.Context) {
 	c.HTML(http.StatusOK, "structures/edit.html", data)
 }
 
+// SaveStructureColumns handles bulk matrix updates from structures/edit
+func SaveStructureColumns(c *gin.Context) {
+	session := sessions.Default(c)
+	structID, _ := strconv.Atoi(c.DefaultPostForm("structure_id", c.Query("id")))
+	if structID == 0 {
+		structID, _ = strconv.Atoi(c.Query("structure_id"))
+	}
+	if structID == 0 {
+		session.Set("error", "Invalid structure ID.")
+		_ = session.Save()
+		c.Redirect(http.StatusFound, "/structures")
+		return
+	}
+
+	db := database.GetDB()
+
+	// 1. Delete marked rows
+	deletedRows := c.PostFormArray("deleted_rows[]")
+	if len(deletedRows) == 0 {
+		if dr := c.PostForm("deleted_rows"); dr != "" {
+			deletedRows = strings.Split(dr, ",")
+		}
+	}
+	for _, delStr := range deletedRows {
+		delID, _ := strconv.Atoi(strings.TrimSpace(delStr))
+		if delID > 0 {
+			_, _ = db.Exec("DELETE FROM structure_columns WHERE id = ? AND structure_id = ?", delID, structID)
+		}
+	}
+
+	// 2. Iterate through form inputs matching cell_address[<key>]
+	_ = c.Request.ParseForm()
+	for key, values := range c.Request.PostForm {
+		if strings.HasPrefix(key, "cell_address[") && strings.HasSuffix(key, "]") {
+			idKey := key[len("cell_address[") : len(key)-1]
+			cellAddr := strings.TrimSpace(values[0])
+			colName := strings.TrimSpace(c.Request.PostForm.Get("excel_column_name[" + idKey + "]"))
+			dataType := strings.TrimSpace(c.Request.PostForm.Get("datatype[" + idKey + "]"))
+			if dataType == "" {
+				dataType = "Text"
+			}
+			nature := strings.TrimSpace(c.Request.PostForm.Get("nature[" + idKey + "]"))
+			if nature == "" {
+				nature = "Optional"
+			}
+			defVal := strings.TrimSpace(c.Request.PostForm.Get("default_value[" + idKey + "]"))
+			showForm := strings.TrimSpace(c.Request.PostForm.Get("show_form[" + idKey + "]"))
+			if showForm == "" {
+				showForm = "Edit"
+			}
+			showTable := strings.TrimSpace(c.Request.PostForm.Get("show_table[" + idKey + "]"))
+			if showTable == "" {
+				showTable = "Edit"
+			}
+
+			if colName == "" {
+				continue
+			}
+
+			if strings.HasPrefix(idKey, "new_") {
+				// Insert new row
+				_, _ = db.Exec(`
+					INSERT INTO structure_columns (structure_id, cell_address, excel_column_name, data_type, nature, default_value, show_in_form, show_in_table)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+				`, structID, cellAddr, colName, dataType, nature, defVal, showForm, showTable)
+			} else {
+				// Update existing row
+				colID, _ := strconv.Atoi(idKey)
+				if colID > 0 {
+					_, _ = db.Exec(`
+						UPDATE structure_columns
+						SET cell_address = ?, excel_column_name = ?, data_type = ?, nature = ?, default_value = ?, show_in_form = ?, show_in_table = ?
+						WHERE id = ? AND structure_id = ?
+					`, cellAddr, colName, dataType, nature, defVal, showForm, showTable, colID, structID)
+				}
+			}
+		}
+	}
+
+	session.Set("success", "Structure configuration saved successfully.")
+	_ = session.Save()
+	c.Redirect(http.StatusFound, fmt.Sprintf("/structures/edit?id=%d", structID))
+}
+
 // SaveStructureColumn adds or updates a schema column
 func SaveStructureColumn(c *gin.Context) {
 	session := sessions.Default(c)

@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"kprm2/database"
 	"kprm2/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
 type DashboardKPI struct {
@@ -64,7 +65,7 @@ func ShowDashboard(c *gin.Context) {
 		}
 
 		// Total cases & closed cases
-		_ = db.QueryRow("SELECT COUNT(*), COALESCE(SUM(CASE WHEN cases.is_closed = 1 THEN 1 ELSE 0 END), 0) FROM cases" + clientCaseWhere).Scan(&kpi.TotalCases, &kpi.ClosedCases)
+		_ = db.QueryRow("SELECT COUNT(*), COALESCE(SUM(CASE WHEN cases.is_closed = 1 THEN 1 ELSE 0 END), 0) FROM cases"+clientCaseWhere).Scan(&kpi.TotalCases, &kpi.ClosedCases)
 
 		// Status breakdown
 		posWhere := " WHERE status = 'Positive'"
@@ -129,4 +130,3 @@ func ShowDashboard(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "dashboard.html", data)
 }
-

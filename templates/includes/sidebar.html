@@ -11,7 +11,8 @@
     <ul class="nav-menu">
         <!-- Dashboard -->
         <li class="nav-item">
-            <a href="/" class="nav-link {{ if or (eq .CurrentPath "/") (eq .CurrentPath "/dashboard") }}active{{ end }}">
+            <a href="/" class="nav-link {{ if or (eq .CurrentPath " /") (eq .CurrentPath "/dashboard" ) }}active{{ end
+                }}">
                 <svg class="icon-indigo" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="7" height="7" rx="1"></rect>
@@ -27,7 +28,8 @@
         <li class="nav-section-label">Operations</li>
 
         <li class="nav-item">
-            <a href="/cases" class="nav-link {{ if and (eq .CurrentPath "/cases") (ne .CurrentStage "closed") }}active{{ end }}">
+            <a href="/cases" class="nav-link {{ if and (eq .CurrentPath " /cases") (ne .CurrentStage "closed" )
+                }}active{{ end }}">
                 <svg class="icon-amber" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -40,7 +42,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/cases/new" class="nav-link {{ if eq .CurrentPath "/cases/new" }}active{{ end }}">
+            <a href="/cases/new" class="nav-link {{ if eq .CurrentPath " /cases/new" }}active{{ end }}">
                 <svg class="icon-emerald" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -53,7 +55,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/tasks" class="nav-link {{ if eq .CurrentPath "/tasks" }}active{{ end }}">
+            <a href="/tasks" class="nav-link {{ if eq .CurrentPath " /tasks" }}active{{ end }}">
                 <svg class="icon-orange" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
@@ -64,7 +66,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/process" class="nav-link {{ if eq .CurrentPath "/process" }}active{{ end }}">
+            <a href="/process" class="nav-link {{ if eq .CurrentPath " /process" }}active{{ end }}">
                 <svg class="icon-amber" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="9 11 12 14 22 4"></polyline>
@@ -75,7 +77,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/review" class="nav-link {{ if eq .CurrentPath "/review" }}active{{ end }}">
+            <a href="/review" class="nav-link {{ if eq .CurrentPath " /review" }}active{{ end }}">
                 <svg class="icon-purple" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -92,7 +94,7 @@
         <li class="nav-section-label">Master Configuration</li>
 
         <li class="nav-item">
-            <a href="/clients" class="nav-link {{ if eq .CurrentPath "/clients" }}active{{ end }}">
+            <a href="/clients" class="nav-link {{ if eq .CurrentPath " /clients" }}active{{ end }}">
                 <svg class="icon-sky" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -105,7 +107,8 @@
         </li>
 
         <li class="nav-item">
-            <a href="/structures" class="nav-link {{ if or (eq .CurrentPath "/structures") (eq .CurrentPath "/structures/edit") }}active{{ end }}">
+            <a href="/structures" class="nav-link {{ if or (eq .CurrentPath " /structures") (eq
+                .CurrentPath "/structures/edit" ) }}active{{ end }}">
                 <svg class="icon-emerald" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -120,7 +123,8 @@
         </li>
 
         <li class="nav-item">
-            <a href="/tasks/blueprints" class="nav-link {{ if or (eq .CurrentPath "/tasks/blueprints") (eq .CurrentPath "/tasks/meta") }}active{{ end }}">
+            <a href="/tasks/blueprints" class="nav-link {{ if or (eq .CurrentPath " /tasks/blueprints") (eq
+                .CurrentPath "/tasks/meta" ) }}active{{ end }}">
                 <svg class="icon-orange" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
@@ -131,7 +135,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/reports" class="nav-link {{ if eq .CurrentPath "/reports" }}active{{ end }}">
+            <a href="/reports" class="nav-link {{ if eq .CurrentPath " /reports" }}active{{ end }}">
                 <svg class="icon-pink" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -148,7 +152,7 @@
         <li class="nav-section-label">System &amp; Channels</li>
 
         <li class="nav-item">
-            <a href="/users" class="nav-link {{ if eq .CurrentPath "/users" }}active{{ end }}">
+            <a href="/users" class="nav-link {{ if eq .CurrentPath " /users" }}active{{ end }}">
                 <svg class="icon-teal" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -159,7 +163,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/whatsapp" class="nav-link {{ if eq .CurrentPath "/whatsapp" }}active{{ end }}">
+            <a href="/whatsapp" class="nav-link {{ if eq .CurrentPath " /whatsapp" }}active{{ end }}">
                 <svg class="icon-emerald" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path
@@ -171,7 +175,7 @@
         </li>
 
         <li class="nav-item">
-            <a href="/communication" class="nav-link {{ if eq .CurrentPath "/communication" }}active{{ end }}">
+            <a href="/communication" class="nav-link {{ if eq .CurrentPath " /communication" }}active{{ end }}">
                 <svg class="icon-blue" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>

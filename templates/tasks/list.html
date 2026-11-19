@@ -1,90 +1,171 @@
 {{ template "header.html" . }}
 
 <div class="content-body p-4 wizard-container">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <!-- Header Banner -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">Task Operations &amp; Assignments</h1>
-            <p class="text-secondary small mb-0">Assign field verification tasks to verifiers and track progress</p>
+            <h1 class="h4 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-list-check text-primary"></i> Task Operations &amp; Verification
+            </h1>
+            <p class="text-secondary small mb-0">Assign verification blueprints to field agents, track outcomes, and submit review remarks.</p>
         </div>
-        <div>
-            <a href="/tasks/blueprints" class="btn btn-secondary btn-sm">
-                <i class="bi bi-gear me-1"></i> Task Blueprints
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <i class="bi bi-plus-circle"></i> Add Task to Case
+            </button>
+            <a href="/tasks/blueprints" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                <i class="bi bi-gear"></i> Task Blueprints
             </a>
         </div>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="card mb-4">
-        <form action="/tasks" method="GET" class="row g-2 align-items-center">
-            <div class="col-12 col-md-5">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Search Task ID, Name, or Case #..." value="{{ .Search }}">
+    {{ if .CaseDetails }}
+    <!-- Active Case Context Banner -->
+    <div class="card mb-3 border-0 bg-primary bg-opacity-10 shadow-none border-start border-4 border-primary p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <span class="badge bg-primary text-uppercase px-2 py-1 me-2">Active Case Filter</span>
+                <span class="fw-bold text-dark fs-14">Case #{{ .CaseDetails.ID }}</span>
+                <span class="text-muted mx-2">|</span>
+                <span class="text-secondary">Client: <strong class="text-dark">{{ .CaseDetails.ClientName }}</strong></span>
+                <span class="text-muted mx-2">|</span>
+                <span class="text-secondary">Structure: <strong class="text-dark">{{ .CaseDetails.SheetName }}</strong></span>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/cases/{{ .CaseDetails.ID }}" class="btn btn-sm btn-outline-primary bg-white">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> View Case Form
+                </a>
+                <a href="/tasks" class="btn btn-sm btn-outline-secondary bg-white">
+                    <i class="bi bi-x-circle me-1"></i> Show All Cases
+                </a>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+
+    <!-- Filter Toolbar -->
+    <div class="card mb-3 shadow-sm border-0">
+        <div class="card-body p-3">
+            <form action="/tasks" method="GET" class="row g-2 align-items-center">
+                {{ if .CaseIDFilter }}
+                <input type="hidden" name="case_id" value="{{ .CaseIDFilter }}">
+                {{ end }}
+                <div class="col-12 col-md-5">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0"
+                            placeholder="Search Task #, Blueprint Name, Case #, or Applicant..." value="{{ .Search }}">
+                    </div>
                 </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <select name="status" class="form-select form-select-sm">
-                    <option value="">-- All Statuses --</option>
-                    <option value="Pending" {{ if eq .StatusFilter "Pending" }}selected{{ end }}>Pending</option>
-                    <option value="In Progress" {{ if eq .StatusFilter "In Progress" }}selected{{ end }}>In Progress</option>
-                    <option value="Review Pending" {{ if eq .StatusFilter "Review Pending" }}selected{{ end }}>Review Pending</option>
-                    <option value="Positive" {{ if eq .StatusFilter "Positive" }}selected{{ end }}>Positive</option>
-                    <option value="Negative" {{ if eq .StatusFilter "Negative" }}selected{{ end }}>Negative</option>
-                    <option value="CNV" {{ if eq .StatusFilter "CNV" }}selected{{ end }}>CNV</option>
-                </select>
-            </div>
-            <div class="col-6 col-md-2">
-                <button type="submit" class="btn btn-sm btn-secondary w-100"><i class="bi bi-funnel me-1"></i> Filter</button>
-            </div>
-            <div class="col-12 col-md-2 text-md-end text-muted fs-12">
-                Showing recent 100 tasks
-            </div>
-        </form>
+                <div class="col-6 col-md-3">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">-- All Task Statuses --</option>
+                        <option value="Pending" {{ if eq .StatusFilter "Pending" }}selected{{ end }}>Pending</option>
+                        <option value="Assigned" {{ if eq .StatusFilter "Assigned" }}selected{{ end }}>Assigned</option>
+                        <option value="In Progress" {{ if eq .StatusFilter "In Progress" }}selected{{ end }}>In Progress</option>
+                        <option value="Review Pending" {{ if eq .StatusFilter "Review Pending" }}selected{{ end }}>Review Pending</option>
+                        <option value="Verified" {{ if eq .StatusFilter "Verified" }}selected{{ end }}>Verified</option>
+                        <option value="Completed" {{ if eq .StatusFilter "Completed" }}selected{{ end }}>Completed</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <button type="submit" class="btn btn-sm btn-secondary w-100 fw-semibold">
+                        <i class="bi bi-funnel me-1"></i> Apply Filter
+                    </button>
+                </div>
+                <div class="col-12 col-md-2 text-md-end text-muted small">
+                    {{ len .Tasks }} task(s) displayed
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Task List Table -->
-    <div class="card">
+    <div class="card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                <thead>
+                <thead class="table-light">
                     <tr>
-                        <th class="ps-3" style="width: 70px;">Task #</th>
-                        <th style="width: 80px;">Case #</th>
-                        <th>Client</th>
-                        <th>Applicant Name</th>
-                        <th>Task Details</th>
+                        <th class="ps-3" style="width: 75px;">Task #</th>
+                        <th style="width: 85px;">Case #</th>
+                        <th>Client / Applicant</th>
+                        <th>Verification Task Blueprint</th>
                         <th>Assigned Verifier</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-end pe-3">Actions</th>
+                        <th class="text-center" style="width: 130px;">Status / Outcome</th>
+                        <th style="width: 140px;">Timestamps</th>
+                        <th class="text-end pe-3" style="width: 180px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{ range .Tasks }}
                     <tr>
                         <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
-                        <td class="font-monospace"><a href="/cases/view?id={{ .CaseID }}" class="text-decoration-none">#{{ .CaseID }}</a></td>
-                        <td class="fw-semibold text-dark">{{ .ClientName }}</td>
-                        <td class="fw-semibold">{{ .ApplicantName }}</td>
+                        <td class="font-monospace">
+                            <a href="/cases/{{ .CaseID }}" class="badge bg-light text-primary border text-decoration-none fw-bold" title="Open Case File">
+                                #{{ .CaseID }}
+                            </a>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ .ApplicantName }}</div>
+                            <span class="text-muted small"><i class="bi bi-building me-1"></i>{{ .ClientName }}</span>
+                        </td>
                         <td>
                             <div class="fw-bold text-dark">{{ .TaskName }}</div>
-                            <span class="badge badge-secondary fs-11">{{ .TaskType }}</span>
+                            <span class="badge bg-light text-secondary border fs-11 text-uppercase">{{ .TaskType }}</span>
+                            {{ if .FinalRemark }}
+                            <div class="text-muted small mt-1 text-truncate" style="max-width: 280px;" title="{{ .FinalRemark }}">
+                                <i class="bi bi-chat-left-quote text-primary me-1"></i>{{ .FinalRemark }}
+                            </div>
+                            {{ end }}
                         </td>
                         <td>
                             {{ if .VerifierName }}
-                                <span class="badge bg-light text-dark border"><i class="bi bi-person me-1"></i>{{ .VerifierName }}</span>
+                            <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-person-fill text-success me-1"></i>{{ .VerifierName }}</span>
                             {{ else }}
-                                <span class="badge badge-warning">Unassigned</span>
+                            <span class="badge bg-warning bg-opacity-25 text-warning-emphasis px-2 py-1">Unassigned</span>
                             {{ end }}
                         </td>
-                        <td class="text-center">{{ safeHTML .StatusBadge }}</td>
+                        <td class="text-center">
+                            <div>{{ safeHTML .StatusBadge }}</div>
+                            {{ if .Outcome }}
+                            <div class="mt-1">
+                                {{ if eq .Outcome "Positive" }}
+                                <span class="badge bg-success bg-opacity-20 text-success fw-bold border border-success border-opacity-25">Positive</span>
+                                {{ else if eq .Outcome "Negative" }}
+                                <span class="badge bg-danger bg-opacity-20 text-danger fw-bold border border-danger border-opacity-25">Negative</span>
+                                {{ else if eq .Outcome "CNV" }}
+                                <span class="badge bg-warning bg-opacity-20 text-dark fw-bold border border-warning border-opacity-25">CNV</span>
+                                {{ else }}
+                                <span class="badge bg-secondary bg-opacity-20 text-secondary">{{ .Outcome }}</span>
+                                {{ end }}
+                            </div>
+                            {{ end }}
+                        </td>
+                        <td class="text-muted small">
+                            <div><i class="bi bi-calendar-plus me-1"></i>{{ .CreatedAt }}</div>
+                            {{ if ne .VerifiedAt "-" }}
+                            <div class="text-success"><i class="bi bi-check2-circle me-1"></i>{{ .VerifiedAt }}</div>
+                            {{ end }}
+                        </td>
                         <td class="text-end pe-3">
-                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal{{ .ID }}" title="Assign Verifier">
-                                <i class="bi bi-person-plus me-1"></i> Assign
-                            </button>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#assignModal{{ .ID }}" title="Assign Verifier">
+                                    <i class="bi bi-person-plus"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal"
+                                    data-bs-target="#statusModal{{ .ID }}" title="Update Status & Outcome">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal{{ .ID }}" title="Delete Task">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
 
-                    <!-- Assign Modal for each task -->
+                    <!-- Assign Modal -->
                     <div class="modal fade" id="assignModal{{ .ID }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
@@ -95,13 +176,16 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body p-4 text-start">
-                                        <p class="mb-3 fs-13">Assign <strong>{{ .TaskName }}</strong> for Case <strong>#{{ .CaseID }}</strong> ({{ .ApplicantName }}) to a field verifier:</p>
+                                        <div class="p-3 bg-light rounded mb-3">
+                                            <div class="fw-bold text-dark">{{ .TaskName }}</div>
+                                            <div class="small text-muted">Case #{{ .CaseID }} | {{ .ApplicantName }} ({{ .ClientName }})</div>
+                                        </div>
                                         <div class="mb-3">
-                                            <label class="form-label fs-13 fw-semibold text-secondary">Select Field Verifier</label>
+                                            <label class="form-label fs-13 fw-semibold text-secondary">Assign Field Verifier</label>
                                             <select name="assigned_to" class="form-select" required>
                                                 <option value="">-- Choose Verifier --</option>
                                                 {{ range $.Verifiers }}
-                                                    <option value="{{ .ID }}">{{ .Username }}</option>
+                                                <option value="{{ .ID }}" {{ if eq .ID $.AssignedTo }}selected{{ end }}>{{ .Username }}</option>
                                                 {{ end }}
                                             </select>
                                         </div>
@@ -114,13 +198,140 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Update Status / Review Modal -->
+                    <div class="modal fade" id="statusModal{{ .ID }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form action="/tasks/update_status" method="POST">
+                                    <input type="hidden" name="case_task_id" value="{{ .ID }}">
+                                    <div class="modal-header bg-light">
+                                        <h5 class="modal-title fs-15 fw-bold">Update Status &amp; Outcome - Task #{{ .ID }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-4 text-start">
+                                        <div class="p-3 bg-light rounded mb-3">
+                                            <div class="fw-bold text-dark">{{ .TaskName }}</div>
+                                            <div class="small text-muted">Case #{{ .CaseID }} | {{ .ApplicantName }}</div>
+                                        </div>
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label fs-13 fw-semibold text-secondary">Status</label>
+                                                <select name="new_status" class="form-select">
+                                                    <option value="Pending" {{ if eq .Status "Pending" }}selected{{ end }}>Pending</option>
+                                                    <option value="Assigned" {{ if eq .Status "Assigned" }}selected{{ end }}>Assigned</option>
+                                                    <option value="In Progress" {{ if eq .Status "In Progress" }}selected{{ end }}>In Progress</option>
+                                                    <option value="Review Pending" {{ if eq .Status "Review Pending" }}selected{{ end }}>Review Pending</option>
+                                                    <option value="Verified" {{ if eq .Status "Verified" }}selected{{ end }}>Verified</option>
+                                                    <option value="Completed" {{ if eq .Status "Completed" }}selected{{ end }}>Completed</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label fs-13 fw-semibold text-secondary">Outcome</label>
+                                                <select name="outcome" class="form-select">
+                                                    <option value="">-- None / Incomplete --</option>
+                                                    <option value="Positive" {{ if eq .Outcome "Positive" }}selected{{ end }}>Positive</option>
+                                                    <option value="Negative" {{ if eq .Outcome "Negative" }}selected{{ end }}>Negative</option>
+                                                    <option value="CNV" {{ if eq .Outcome "CNV" }}selected{{ end }}>CNV (Could Not Verify)</option>
+                                                    <option value="Pending" {{ if eq .Outcome "Pending" }}selected{{ end }}>Pending</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fs-13 fw-semibold text-secondary">Final Remark / Verification Finding</label>
+                                            <textarea name="final_remark" rows="3" class="form-control" placeholder="Enter formal remark for this verification task...">{{ .FinalRemark }}</textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fs-13 fw-semibold text-secondary">Internal Remarks</label>
+                                            <textarea name="general_remarks" rows="2" class="form-control" placeholder="Internal notes or reviewer comments...">{{ .Remarks }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer bg-light">
+                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-sm btn-success">Save Outcome</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal{{ .ID }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <form action="/tasks/delete" method="POST">
+                                    <input type="hidden" name="case_task_id" value="{{ .ID }}">
+                                    <div class="modal-header bg-danger text-white py-2">
+                                        <h5 class="modal-title fs-15 fw-bold"><i class="bi bi-exclamation-triangle me-1"></i> Remove Task</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-3 text-start">
+                                        <p class="small mb-0">Are you sure you want to remove Task <strong>#{{ .ID }}</strong> ({{ .TaskName }}) from Case <strong>#{{ .CaseID }}</strong>?</p>
+                                    </div>
+                                    <div class="modal-footer bg-light py-2">
+                                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-sm btn-danger">Yes, Remove</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
                     {{ else }}
                     <tr>
-                        <td colspan="8" class="text-center py-4 text-muted fst-italic">No tasks found matching criteria.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-clipboard2-x fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                            <span class="fw-semibold">No operational tasks found.</span>
+                            <div class="small mt-1">Try adjusting your search criteria or click "Add Task to Case" above.</div>
+                        </td>
                     </tr>
                     {{ end }}
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task to Case Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/tasks/add" method="POST">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-15 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i> Add Verification Task to Case</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-start">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Target Case # <span class="text-danger">*</span></label>
+                        <input type="number" name="case_id" class="form-control" placeholder="e.g. 101" 
+                            value="{{ if .CaseIDFilter }}{{ .CaseIDFilter }}{{ end }}" required>
+                        <div class="form-text small">Enter the numeric ID of the case file to attach this task to.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Select Task Blueprint <span class="text-danger">*</span></label>
+                        <select name="task_id" class="form-select" required>
+                            <option value="">-- Choose Blueprint --</option>
+                            {{ range .AllBlueprints }}
+                            <option value="{{ .ID }}">{{ .TaskName }} [{{ .TaskType }}]</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold text-secondary">Assign Verifier Immediately (Optional)</label>
+                        <select name="assigned_to" class="form-select">
+                            <option value="">-- Leave Unassigned --</option>
+                            {{ range .Verifiers }}
+                            <option value="{{ .ID }}">{{ .Username }}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Add Task</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

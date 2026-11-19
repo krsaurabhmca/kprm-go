@@ -1,120 +1,205 @@
 {{ template "header.html" . }}
 
 <div class="content-body p-4 wizard-container">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">Schema Designer: {{ .Structure.StructureName }}</h1>
-            <p class="text-secondary small mb-0">Client: <strong>{{ .Structure.ClientName }}</strong> &bull; Configure data fields, calculated columns, and validation</p>
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="h3 fw-bold text-dark mb-0">Edit Structure: {{ .Structure.StructureName }}</h1>
+                <span class="badge badge-primary">{{ .Structure.ClientName }}</span>
+            </div>
+            <p class="text-secondary small mb-0 mt-1">Configure ingestion fields, cell addresses, data types, and form/table access rules</p>
         </div>
-        <div>
-            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newColumnModal">
-                <i class="bi bi-plus-lg me-1"></i> Add Schema Field
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" onclick="addExtraRow()">
+                <i class="bi bi-plus-lg me-1"></i> Add Column Row
             </button>
-            <a href="/structures" class="btn btn-secondary btn-sm ms-2">Back to Structures</a>
+            <a href="/structures" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Structures
+            </a>
         </div>
     </div>
 
-    <!-- Schema Columns Table -->
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                <thead>
-                    <tr>
-                        <th class="ps-3" style="width: 70px;">ID</th>
-                        <th>Field Name (Internal)</th>
-                        <th>Display Header</th>
-                        <th>Field Type</th>
-                        <th class="text-center">Required</th>
-                        <th>Calculated Function / Formula</th>
-                        <th class="text-end pe-3">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ range .Columns }}
-                    <tr>
-                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
-                        <td class="font-monospace text-dark">{{ .ColumnName }}</td>
-                        <td class="fw-semibold">{{ .DisplayName }}</td>
-                        <td><span class="badge badge-secondary">{{ .DataType }}</span></td>
-                        <td class="text-center">
-                            {{ if eq .IsMandatory 1 }}
-                                <span class="badge badge-danger">Yes</span>
-                            {{ else }}
-                                <span class="badge badge-secondary">No</span>
-                            {{ end }}
-                        </td>
-                        <td class="font-monospace text-muted small">
-                            {{ if .CalculatedFunction.Valid }}{{ .CalculatedFunction.String }}{{ else }}-{{ end }}
-                        </td>
-                        <td class="text-end pe-3">
-                            <form action="/structure_columns/delete" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this field?');">
-                                <input type="hidden" name="column_id" value="{{ .ID }}">
-                                <input type="hidden" name="structure_id" value="{{ $.Structure.ID }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Field">
+    <form action="/structures/edit?id={{ .Structure.ID }}" method="POST" id="structureForm">
+        <input type="hidden" name="structure_id" value="{{ .Structure.ID }}">
+        <div id="deleted_rows_container"></div>
+
+        <div class="card overflow-hidden p-0 mb-3">
+            <div class="table-responsive" style="max-height: 70vh;">
+                <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                    <thead class="sticky-top bg-light">
+                        <tr>
+                            <th style="width: 100px;">Cell Address</th>
+                            <th style="width: 220px;">Excel / Display Name</th>
+                            <th style="width: 150px;">Data Type</th>
+                            <th style="width: 140px;">Nature</th>
+                            <th>Default Value / Formula</th>
+                            <th style="width: 130px;">in Form</th>
+                            <th style="width: 100px;" class="text-center">in Table</th>
+                            <th style="width: 70px;" class="text-end pe-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="structure-tbody">
+                        {{ range .Columns }}
+                        <tr id="row_{{ .ID }}">
+                            <td>
+                                <input type="text" name="cell_address[{{ .ID }}]" class="form-control form-control-sm font-monospace text-uppercase"
+                                       value="{{ .CellAddress }}" placeholder="e.g. A1" required>
+                            </td>
+                            <td>
+                                <input type="text" name="excel_column_name[{{ .ID }}]" class="form-control form-control-sm fw-semibold text-dark"
+                                       value="{{ .ExcelColumnName }}" placeholder="Field Name" required>
+                            </td>
+                            <td>
+                                <select name="datatype[{{ .ID }}]" class="form-select form-select-sm" required>
+                                    <option value="Text" {{ if eq .DataType "Text" }}selected{{ end }}>Text</option>
+                                    <option value="Number" {{ if eq .DataType "Number" }}selected{{ end }}>Number</option>
+                                    <option value="Date" {{ if eq .DataType "Date" }}selected{{ end }}>Date</option>
+                                    <option value="File" {{ if eq .DataType "File" }}selected{{ end }}>File</option>
+                                    <option value="List" {{ if eq .DataType "List" }}selected{{ end }}>List</option>
+                                    <option value="Boolean" {{ if eq .DataType "Boolean" }}selected{{ end }}>Boolean</option>
+                                    <option value="Long text" {{ if or (eq .DataType "Long text") (eq .DataType "textarea") }}selected{{ end }}>Long Text</option>
+                                    <option value="Calculated" {{ if eq .DataType "Calculated" }}selected{{ end }}>Calculated</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="nature[{{ .ID }}]" class="form-select form-select-sm" required>
+                                    <option value="Mandatory" {{ if eq .Nature "Mandatory" }}selected{{ end }}>Mandatory</option>
+                                    <option value="Optional" {{ if or (eq .Nature "Optional") (not .Nature) }}selected{{ end }}>Optional</option>
+                                    <option value="Primary" {{ if eq .Nature "Primary" }}selected{{ end }}>Primary Key</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="default_value[{{ .ID }}]" class="form-control form-control-sm font-monospace fs-12"
+                                       value="{{ if .DefaultValue.Valid }}{{ .DefaultValue.String }}{{ end }}" placeholder="Optional value or calculation">
+                            </td>
+                            <td>
+                                <select name="show_form[{{ .ID }}]" class="form-select form-select-sm">
+                                    <option value="Edit" {{ if or (eq .ShowInForm "Edit") (not .ShowInForm) }}selected{{ end }}>Edit</option>
+                                    <option value="Readonly" {{ if eq .ShowInForm "Readonly" }}selected{{ end }}>Readonly</option>
+                                    <option value="Hidden" {{ if eq .ShowInForm "Hidden" }}selected{{ end }}>Hidden</option>
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-inline-block">
+                                    <input type="hidden" name="show_table[{{ .ID }}]" value="Hidden">
+                                    <input class="form-check-input" type="checkbox" name="show_table[{{ .ID }}]" value="Edit"
+                                           {{ if ne .ShowInTable "Hidden" }}checked{{ end }}>
+                                </div>
+                            </td>
+                            <td class="text-end pe-3">
+                                <button type="button" class="btn btn-sm btn-outline-danger p-1" title="Remove Field" onclick="removeRow('{{ .ID }}')">
                                     <i class="bi bi-trash"></i>
                                 </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {{ else }}
-                    <tr>
-                        <td colspan="7" class="text-center py-4 text-muted fst-italic">No fields configured yet. Click 'Add Schema Field' to begin.</td>
-                    </tr>
-                    {{ end }}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr id="emptyPlaceholder">
+                            <td colspan="8" class="text-center py-4 text-muted fst-italic">
+                                No columns defined yet. Click "Add Column Row" to configure fields.
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light p-3 d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addExtraRow()">
+                    <i class="bi bi-plus-circle me-1"></i> Add Another Row
+                </button>
+                <div class="d-flex gap-2">
+                    <a href="/structures" class="btn btn-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm">
+                        <i class="bi bi-save me-1"></i> Save Changes
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
 
-<!-- Add Column Modal -->
-<div class="modal fade" id="newColumnModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="/structure_columns/new" method="POST">
-                <input type="hidden" name="structure_id" value="{{ .Structure.ID }}">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold">Add Dynamic Column</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Column Name (Internal code) <span class="text-danger">*</span></label>
-                        <input type="text" name="column_name" class="form-control" placeholder="e.g. applicant_pan" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Display Header Label <span class="text-danger">*</span></label>
-                        <input type="text" name="display_name" class="form-control" placeholder="e.g. PAN Card Number" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Data Type <span class="text-danger">*</span></label>
-                        <select name="data_type" class="form-select" required>
-                            <option value="text">Text (Single Line)</option>
-                            <option value="textarea">Textarea (Multi-line)</option>
-                            <option value="dropdown">Dropdown (Select list)</option>
-                            <option value="date">Date</option>
-                            <option value="number">Number / Amount</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Mandatory Field</label>
-                        <select name="is_mandatory" class="form-select">
-                            <option value="0">Optional</option>
-                            <option value="1">Mandatory</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Calculated Function (Optional)</label>
-                        <input type="text" name="calculated_function" class="form-control" placeholder="e.g. current_date, tat, overall_status">
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm btn-primary">Add Field</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<script>
+let newRowCount = 0;
+
+function addExtraRow() {
+    newRowCount++;
+    const newId = 'new_' + newRowCount;
+    const tbody = document.getElementById('structure-tbody');
+    const placeholder = document.getElementById('emptyPlaceholder');
+    if (placeholder) {
+        placeholder.remove();
+    }
+
+    const tr = document.createElement('tr');
+    tr.id = 'row_' + newId;
+    tr.innerHTML = `
+        <td>
+            <input type="text" name="cell_address[${newId}]" class="form-control form-control-sm font-monospace text-uppercase"
+                   placeholder="e.g. A1" required>
+        </td>
+        <td>
+            <input type="text" name="excel_column_name[${newId}]" class="form-control form-control-sm fw-semibold text-dark"
+                   placeholder="Field Name" required>
+        </td>
+        <td>
+            <select name="datatype[${newId}]" class="form-select form-select-sm" required>
+                <option value="Text" selected>Text</option>
+                <option value="Number">Number</option>
+                <option value="Date">Date</option>
+                <option value="File">File</option>
+                <option value="List">List</option>
+                <option value="Boolean">Boolean</option>
+                <option value="Long text">Long Text</option>
+                <option value="Calculated">Calculated</option>
+            </select>
+        </td>
+        <td>
+            <select name="nature[${newId}]" class="form-select form-select-sm" required>
+                <option value="Mandatory">Mandatory</option>
+                <option value="Optional" selected>Optional</option>
+                <option value="Primary">Primary Key</option>
+            </select>
+        </td>
+        <td>
+            <input type="text" name="default_value[${newId}]" class="form-control form-control-sm font-monospace fs-12"
+                   placeholder="Optional value or calculation">
+        </td>
+        <td>
+            <select name="show_form[${newId}]" class="form-select form-select-sm">
+                <option value="Edit" selected>Edit</option>
+                <option value="Readonly">Readonly</option>
+                <option value="Hidden">Hidden</option>
+            </select>
+        </td>
+        <td class="text-center">
+            <div class="form-check form-switch d-inline-block">
+                <input type="hidden" name="show_table[${newId}]" value="Hidden">
+                <input class="form-check-input" type="checkbox" name="show_table[${newId}]" value="Edit" checked>
+            </div>
+        </td>
+        <td class="text-end pe-3">
+            <button type="button" class="btn btn-sm btn-outline-danger p-1" title="Remove Field" onclick="removeRow('${newId}')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+}
+
+function removeRow(id) {
+    if (!confirm('Are you sure you want to remove this column?')) return;
+    const row = document.getElementById('row_' + id);
+    if (row) {
+        row.remove();
+        if (!id.toString().startsWith('new_')) {
+            const container = document.getElementById('deleted_rows_container');
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'deleted_rows[]';
+            hidden.value = id;
+            container.appendChild(hidden);
+        }
+    }
+}
+</script>
 
 {{ template "footer.html" . }}
