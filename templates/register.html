@@ -2,58 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }}</title>
+    <title>{{ if .Title }}{{ .Title }}{{ else }}Register - Structure Clone Wizard{{ end }}</title>
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/custom_ui.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body class="auth-body">
-    <div class="auth-card" style="max-width: 440px;">
-        <div class="auth-header">
-            <div class="auth-logo">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                    <polyline points="2 17 12 22 22 17"></polyline>
-                    <polyline points="2 12 12 17 22 12"></polyline>
-                </svg>
-            </div>
-            <h2>Create an Account</h2>
-            <p>Register as a team member or verifier</p>
-        </div>
-
-        {{ if .Error }}
-        <div class="alert alert-danger mb-3 py-2 px-3 fs-13">
-            <i class="bi bi-exclamation-circle me-1"></i> {{ .Error }}
-        </div>
-        {{ end }}
-
-        <form action="/register" method="POST">
-            <input type="hidden" name="action" value="register">
-            <div class="form-group mb-3">
-                <label class="form-label fs-13 fw-semibold text-secondary">Username</label>
-                <input type="text" name="username" class="form-control" placeholder="Choose a username" required autofocus>
-            </div>
-            <div class="form-group mb-3">
-                <label class="form-label fs-13 fw-semibold text-secondary">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Create a password" required>
-            </div>
-            <div class="form-group mb-4">
-                <label class="form-label fs-13 fw-semibold text-secondary">Assign Role</label>
-                <select name="role_id" class="form-select" required>
-                    <option value="">-- Select Role --</option>
-                    {{ range .Roles }}
-                        <option value="{{ .ID }}">{{ .RoleName }}</option>
-                    {{ end }}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Complete Registration</button>
-        </form>
-
-        <div class="auth-footer mt-4 text-center">
-            <p class="fs-13 text-muted">Already registered? <a href="/login" class="fw-semibold text-primary">Sign in here</a></p>
-        </div>
+<body>
+<div class="wizard-container wizard-card-xs">
+    <div class="wizard-header mb-15">
+        <h1 class="page-title">Register</h1>
+        <p>Create an Account</p>
     </div>
+
+    {{ if .Error }}
+        <div class="alert alert-danger mb-1">
+            {{ .Error }}
+        </div>
+    {{ end }}
+
+    <form action="/register" method="POST">
+        <input type="hidden" name="action" value="register">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" class="form-control" required autofocus>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>User Type (Role)</label>
+            <select name="role_id" class="form-control" required>
+                <option value="">-- Select Role --</option>
+                {{ range .Roles }}
+                    <option value="{{ .ID }}">{{ .RoleName }}</option>
+                {{ end }}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Create Account</button>
+    </form>
+    
+    <div class="text-center mt-15">
+        <a href="/login" class="text-muted no-underline">Already have an account? Login</a>
+    </div>
+</div>
 </body>
 </html>
-

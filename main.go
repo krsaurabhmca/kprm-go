@@ -142,6 +142,8 @@ func main() {
 	r.GET("/docs.php", redirectWithQuery("/docs"))
 
 	// Inbound Webhooks (No session required, authenticates via payload)
+	r.GET("/api/health", handlers.HealthCheckAPI)
+	r.GET("/health", handlers.HealthCheckAPI)
 	r.POST("/api/task_callback.php", handlers.InboundTaskWebhookCallback)
 	r.POST("/api_task_update.php", handlers.InboundTaskWebhookCallback)
 	r.POST("/system/api.php", handlers.InboundTaskWebhookCallback)

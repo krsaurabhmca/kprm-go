@@ -20,7 +20,7 @@ CREATE TABLE `case_data` (
   KEY `column_id` (`column_id`),
   CONSTRAINT `case_data_ibfk_1` FOREIGN KEY (`case_id`) REFERENCES `cases` (`id`) ON DELETE CASCADE,
   CONSTRAINT `case_data_ibfk_2` FOREIGN KEY (`column_id`) REFERENCES `structure_columns` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=345 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=345 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `case_data`
 INSERT INTO `case_data` (`id`, `case_id`, `column_id`, `data_value`) VALUES ('210', '25', '69', '1');
@@ -173,7 +173,7 @@ CREATE TABLE `case_task_data` (
   KEY `task_meta_id` (`task_meta_id`),
   CONSTRAINT `case_task_data_ibfk_1` FOREIGN KEY (`case_task_id`) REFERENCES `case_tasks` (`id`) ON DELETE CASCADE,
   CONSTRAINT `case_task_data_ibfk_2` FOREIGN KEY (`task_meta_id`) REFERENCES `task_meta` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=163 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=163 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `case_task_data`
 INSERT INTO `case_task_data` (`id`, `case_task_id`, `task_meta_id`, `data_value`) VALUES ('37', '13', '7', 'Saurabh');
@@ -260,7 +260,7 @@ CREATE TABLE `case_task_history` (
   PRIMARY KEY (`id`),
   KEY `case_task_id` (`case_task_id`),
   CONSTRAINT `case_task_history_ibfk_1` FOREIGN KEY (`case_task_id`) REFERENCES `case_tasks` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 -- Structure for table `case_tasks`
@@ -294,7 +294,7 @@ CREATE TABLE `case_tasks` (
   CONSTRAINT `case_tasks_ibfk_2` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE,
   CONSTRAINT `case_tasks_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `case_tasks_ibfk_4` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `case_tasks`
 INSERT INTO `case_tasks` (`id`, `case_id`, `task_id`, `assigned_to`, `status`, `outcome`, `final_remark`, `other_requirement`, `created_by`, `created_at`, `remarks`, `attachments`, `verified_at`, `api_dispatch_status`, `api_dispatched_at`, `api_last_response`, `external_status`, `api_last_payload`) VALUES ('13', '25', '2', '4', 'Completed', 'Positive', 'ITR - We have verified an ITR of Saurabh, Pan no. AFGWDDG7237A, for AY-2026-27 and found that an ITR return has been filed with ACK No. AFGWDDG7237A, dated on 2026-08-31. Total income amount is Rs. 127237273/- Status - Positive.', NULL, '1', '2026-08-31 14:13:56', NULL, '[\"uploads/tasks/test_image.jpg\",\"uploads/tasks/gen_att_6a95e183aa21b.pptx\"]', NULL, NULL, NULL, NULL, NULL, NULL);
@@ -328,7 +328,7 @@ CREATE TABLE `cases` (
   KEY `created_by` (`created_by`),
   CONSTRAINT `cases_ibfk_1` FOREIGN KEY (`structure_id`) REFERENCES `client_structures` (`id`) ON DELETE CASCADE,
   CONSTRAINT `cases_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `cases`
 INSERT INTO `cases` (`id`, `structure_id`, `created_by`, `created_at`, `status`, `final_remark`) VALUES ('25', '3', '1', '2026-08-31 14:13:30', 'Positive', 'ITR - We have verified an ITR of Saurabh, Pan no. AFGWDDG7237A, for AY-2026-27 and found that an ITR return has been filed with ACK No. AFGWDDG7237A, dated on 2026-08-31. Total income amount is Rs. 127237273/- Status - Positive. | ITR - We have verified an ITR of Saurabh, Pan no. ASDFAGGD, for AY-2022-23 and found that an ITR return has been filed with ACK No. DSFDSFGD, dated on 2026-08-31. Total income amount is Rs. 1244567/- Status - Positive. | ITR - We have verified an ITR of Saurabh, Pan no. AFGWDDG7237A, for AY-2026-27 and found that an ITR return has been filed with ACK No. DSFDSFGD, dated on 2026-08-31. Total income amount is Rs. 2314546/- Status - Positive.');
@@ -352,7 +352,7 @@ CREATE TABLE `client_structures` (
   PRIMARY KEY (`id`),
   KEY `client_id` (`client_id`),
   CONSTRAINT `client_structures_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `client_structures`
 INSERT INTO `client_structures` (`id`, `client_id`, `sheet_name`, `created_at`) VALUES ('3', '3', 'SAMPLED', '2026-08-31 13:39:01');
@@ -378,7 +378,7 @@ CREATE TABLE `clients` (
   `whatsapp_account_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `clients`
 INSERT INTO `clients` (`id`, `name`, `email`, `email_reports_enabled`, `created_at`, `keyword_positive`, `keyword_negative`, `keyword_cnv`, `agency_name`, `agency_stamp`, `smtp_account_id`, `whatsapp_account_id`) VALUES ('3', 'Sarswat', NULL, '1', '2026-08-31 13:38:28', 'Success', 'Fail', 'Not Decided', 'KPRM', 'uploads/stamps/1788209552_Screenshot 2026-01-31 081625.png', NULL, '-1');
@@ -399,7 +399,7 @@ CREATE TABLE `column_rbac` (
   KEY `role_id` (`role_id`),
   CONSTRAINT `column_rbac_ibfk_1` FOREIGN KEY (`column_id`) REFERENCES `structure_columns` (`id`) ON DELETE CASCADE,
   CONSTRAINT `column_rbac_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `user_roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=479 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=479 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `column_rbac`
 INSERT INTO `column_rbac` (`id`, `column_id`, `role_id`, `access_level`) VALUES ('249', '69', '1', 'Edit');
@@ -689,7 +689,7 @@ CREATE TABLE `report_mappings` (
   PRIMARY KEY (`id`),
   KEY `report_template_id` (`report_template_id`),
   CONSTRAINT `report_mappings_ibfk_1` FOREIGN KEY (`report_template_id`) REFERENCES `report_templates` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3016 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3016 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `report_mappings`
 INSERT INTO `report_mappings` (`id`, `report_template_id`, `target_cell`, `mapping_type`, `mapping_value`) VALUES ('1558', '8', 'A1', 'Fixed', 'RCU Verification Report - Saraswat Co-Operative Bank Ltd');
@@ -841,7 +841,7 @@ CREATE TABLE `structure_columns` (
   PRIMARY KEY (`id`),
   KEY `structure_id` (`structure_id`),
   CONSTRAINT `structure_columns_ibfk_1` FOREIGN KEY (`structure_id`) REFERENCES `client_structures` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=200 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=200 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `structure_columns`
 INSERT INTO `structure_columns` (`id`, `structure_id`, `cell_address`, `excel_column_name`, `data_type`, `nature`, `default_value`, `show_in_form`, `show_in_table`) VALUES ('69', '3', 'A1', 'Sr. No.', 'Text', 'Optional', '', 'Hidden', 'Edit');
@@ -983,7 +983,7 @@ CREATE TABLE `task_meta` (
   PRIMARY KEY (`id`),
   KEY `task_id` (`task_id`),
   CONSTRAINT `task_meta_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=246 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=246 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `task_meta`
 INSERT INTO `task_meta` (`id`, `task_id`, `variable_tag`, `field_name`, `data_type`, `is_mandatory`, `show_in_details`, `list_options`, `send_in_message`) VALUES ('1', '1', '', 'applicant_name', 'Text', '1', '1', '', '1');
@@ -1246,7 +1246,7 @@ CREATE TABLE `task_meta_rbac` (
   KEY `role_id` (`role_id`),
   CONSTRAINT `task_meta_rbac_ibfk_1` FOREIGN KEY (`task_meta_id`) REFERENCES `task_meta` (`id`) ON DELETE CASCADE,
   CONSTRAINT `task_meta_rbac_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `user_roles` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=171 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=171 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `task_meta_rbac`
 INSERT INTO `task_meta_rbac` (`id`, `task_meta_id`, `role_id`, `access_level`) VALUES ('1', '241', '1', 'Write');
@@ -1432,7 +1432,7 @@ CREATE TABLE `task_remarks` (
   PRIMARY KEY (`id`),
   KEY `task_id` (`task_id`),
   CONSTRAINT `task_remarks_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=142 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=142 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `task_remarks`
 INSERT INTO `task_remarks` (`id`, `task_id`, `remark_type`, `remark_text`) VALUES ('1', '1', 'Positive', 'Residence - Applicant Name – #applicant_name#- Visit done by field executive at the given address – #address#. Address is exit at the given locality. Met with  #met_with# at the given address and he/she has confirm that, he/she is staying at the address for the last #time_period# at #ownership# premises. Total family members are #family#. The area of premises is #area#. The given address is in #locality# and address is traceable. TPC confirmation was taken from  #tpc# and they have confirmed the applicant’s stability at the address. ');
@@ -1608,7 +1608,7 @@ CREATE TABLE `tasks` (
   `whatsapp_account_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `task_name` (`task_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `tasks`
 INSERT INTO `tasks` (`id`, `task_type`, `task_name`, `created_at`, `smtp_account_id`, `whatsapp_account_id`) VALUES ('1', 'PHYSICAL', 'Residence', '2025-05-28 00:19:05', NULL, NULL);
@@ -1670,7 +1670,7 @@ CREATE TABLE `user_roles` (
   `role_name` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `role_name` (`role_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `user_roles`
 INSERT INTO `user_roles` (`id`, `role_name`) VALUES ('1', 'Admin');
@@ -1692,11 +1692,12 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `email` varchar(150) DEFAULT NULL,
   `mobile` varchar(100) DEFAULT NULL,
+  `allowed_task_types` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   KEY `role_id` (`role_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `user_roles` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `users`
 INSERT INTO `users` (`id`, `username`, `password_hash`, `role_id`, `created_at`, `email`, `mobile`) VALUES ('1', 'admin', '$2y$12$wHnZJPs2Tal2E2jgs9JMeur.CsDDR8MceNqwAs.pUrKje4hyp9FEC', '1', '2026-08-29 17:56:51', NULL, NULL);
@@ -1761,7 +1762,7 @@ CREATE TABLE IF NOT EXISTS `task_report_formats` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `task_report_formats` (`id`, `name`, `slug`, `description`, `columns_json`, `options_json`, `extra_message`, `is_system`) VALUES
 (1, 'Standard 3-Column', 'standard_3_column', 'Clean 3-column table: Task Name, Status, Remarks', '[\"task_name\",\"status\",\"remarks\"]', '{\"hide_header\":false}', '', 1),

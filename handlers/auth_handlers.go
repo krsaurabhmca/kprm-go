@@ -89,6 +89,41 @@ func ProcessLogin(c *gin.Context) {
 		&user.AllowedTaskTypes,
 	)
 
+	// Fallback 1: in case allowed_task_types column is missing in older database schemas
+	if err != nil {
+		queryFallback := `
+			SELECT u.id, u.username, u.password_hash, COALESCE(u.role_id, 1), COALESCE(r.role_name, 'Admin')
+			FROM users u 
+			LEFT JOIN user_roles r ON u.role_id = r.id 
+			WHERE LOWER(u.username) = LOWER(?) OR (u.email IS NOT NULL AND LOWER(u.email) = LOWER(?)) 
+			LIMIT 1
+		`
+		err = db.QueryRow(queryFallback, username, username).Scan(
+			&user.ID,
+			&user.Username,
+			&user.PasswordHash,
+			&user.RoleID,
+			&user.RoleName,
+		)
+	}
+
+	// Fallback 2: minimal query in case user_roles join fails
+	if err != nil {
+		queryMinimal := `
+			SELECT u.id, u.username, u.password_hash, COALESCE(u.role_id, 1)
+			FROM users u 
+			WHERE LOWER(u.username) = LOWER(?) OR (u.email IS NOT NULL AND LOWER(u.email) = LOWER(?)) 
+			LIMIT 1
+		`
+		err = db.QueryRow(queryMinimal, username, username).Scan(
+			&user.ID,
+			&user.Username,
+			&user.PasswordHash,
+			&user.RoleID,
+		)
+		user.RoleName = "Admin"
+	}
+
 	if err != nil {
 		log.Printf("⚠️ [LOGIN] User lookup failed for '%s': %v", username, err)
 		session.Set("error", "Invalid username or password.")

@@ -4,6 +4,8 @@
 *.dll
 *.so
 *.dylib
+kprm
+kprm-go
 
 # Test binaries
 *.test

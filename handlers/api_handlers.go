@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"kprm2/database"
@@ -245,4 +246,72 @@ func InboundTaskWebhookCallback(c *gin.Context) {
 		"task_id": payload.TaskID,
 	})
 }
+
+// HealthCheckAPI performs full diagnostics on server and database connectivity
+func HealthCheckAPI(c *gin.Context) {
+	start := time.Now()
+	res := gin.H{
+		"server":    "online",
+		"timestamp": time.Now().Format("2006-01-02 15:04:05 MST"),
+		"platform":  "KPRM2 Go Platform",
+	}
+
+	db := database.GetDB()
+	if db == nil {
+		res["database_status"] = "error"
+		res["error"] = "Database connection object is nil (verify DB settings in .env)"
+		c.JSON(http.StatusServiceUnavailable, res)
+		return
+	}
+
+	if err := db.Ping(); err != nil {
+		res["database_status"] = "disconnected"
+		res["error"] = err.Error()
+		c.JSON(http.StatusServiceUnavailable, res)
+		return
+	}
+
+	res["database_status"] = "connected"
+	res["db_latency_ms"] = time.Since(start).Milliseconds()
+
+	// 1. Check if allowed_task_types column exists
+	var colCount int
+	_ = db.QueryRow("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'allowed_task_types'").Scan(&colCount)
+	res["column_allowed_task_types_exists"] = colCount > 0
+
+	// 2. Count total users
+	var userCount int
+	_ = db.QueryRow("SELECT COUNT(*) FROM users").Scan(&userCount)
+	res["total_users_count"] = userCount
+
+	// 3. Test exact login query for admin
+	var adminID int
+	var adminUser, adminHash string
+	var roleID int
+	var roleName string
+	var allowedTasks sql.NullString
+
+	query := `
+		SELECT u.id, u.username, u.password_hash, COALESCE(u.role_id, 1), COALESCE(r.role_name, 'Admin'), u.allowed_task_types
+		FROM users u 
+		LEFT JOIN user_roles r ON u.role_id = r.id 
+		WHERE LOWER(u.username) = 'admin'
+		LIMIT 1
+	`
+	err := db.QueryRow(query).Scan(&adminID, &adminUser, &adminHash, &roleID, &roleName, &allowedTasks)
+	if err != nil {
+		res["admin_user_lookup"] = "FAILED"
+		res["admin_user_error"] = err.Error()
+	} else {
+		res["admin_user_lookup"] = "SUCCESS"
+		res["admin_id"] = adminID
+		res["admin_username"] = adminUser
+		res["admin_role"] = roleName
+		res["admin_hash_length"] = len(adminHash)
+		res["admin123_matches_hash"] = utils.CheckPassword("admin123", adminHash)
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 

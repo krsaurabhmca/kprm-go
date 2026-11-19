@@ -6,21 +6,30 @@ import (
 	"log"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"kprm2/config"
 )
 
 var DB *sql.DB
 
 func InitDB(cfg *config.Config) (*sql.DB, error) {
-	// DSN format: username:password@tcp(host:port)/dbname?parseTime=true&loc=Asia%2FKolkata&charset=utf8mb4
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Asia%%2FKolkata&charset=utf8mb4&collation=utf8mb4_unicode_ci",
-		cfg.DBUser,
-		cfg.DBPass,
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBName,
-	)
+	loc, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		loc = time.Local
+	}
+
+	mysqlCfg := mysql.NewConfig()
+	mysqlCfg.User = cfg.DBUser
+	mysqlCfg.Passwd = cfg.DBPass
+	mysqlCfg.Net = "tcp"
+	mysqlCfg.Addr = fmt.Sprintf("%s:%s", cfg.DBHost, cfg.DBPort)
+	mysqlCfg.DBName = cfg.DBName
+	mysqlCfg.ParseTime = true
+	mysqlCfg.Loc = loc
+	mysqlCfg.Collation = "utf8mb4_unicode_ci"
+	mysqlCfg.AllowNativePasswords = true
+
+	dsn := mysqlCfg.FormatDSN()
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
@@ -74,6 +83,11 @@ func ensureEssentialTables(db *sql.DB) {
 			PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	`)
+
+	// 2b. Make sure columns exist even if users table was created from an older schema dump
+	_, _ = db.Exec("ALTER TABLE users ADD COLUMN allowed_task_types VARCHAR(255) NULL")
+	_, _ = db.Exec("ALTER TABLE users ADD COLUMN email VARCHAR(150) NULL")
+	_, _ = db.Exec("ALTER TABLE users ADD COLUMN mobile VARCHAR(100) NULL")
 
 	// 3. Ensure default admin and offerplant users exist if users table is empty
 	var userCount int
