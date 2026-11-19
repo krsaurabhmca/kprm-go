@@ -91,7 +91,7 @@
                                 <td class="ps-3 fw-bold text-dark">{{ .TaskName }}</td>
                                 <td><span class="badge badge-secondary">{{ .TaskType }}</span></td>
                                 <td class="text-secondary"><i class="bi bi-person me-1"></i>{{ .VerifierName }}</td>
-                                <td class="text-center">{{ .StatusBadge }}</td>
+                                <td class="text-center">{{ safeHTML .StatusBadge }}</td>
                                 <td class="text-muted small" style="white-space: pre-line;">{{ if .Remarks }}{{ .Remarks }}{{ else }}-{{ end }}</td>
                             </tr>
                             {{ else }}

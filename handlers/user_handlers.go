@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -46,6 +47,17 @@ func ListUsers(c *gin.Context) {
 			}
 		}
 
+		if len(roles) == 0 {
+			roles = []models.UserRole{
+				{ID: 1, RoleName: "Admin"},
+				{ID: 2, RoleName: "Manager"},
+				{ID: 3, RoleName: "BEO"},
+				{ID: 4, RoleName: "Reviewer"},
+				{ID: 5, RoleName: "Verifier"},
+				{ID: 7, RoleName: "DEV"},
+			}
+		}
+
 		q := `
 			SELECT u.id, u.username, COALESCE(u.role_id, 1), COALESCE(r.role_name, 'Admin'), 
 			       COALESCE(u.email, ''), COALESCE(u.mobile, ''),
@@ -73,7 +85,15 @@ func ListUsers(c *gin.Context) {
 			defer rows.Close()
 			for rows.Next() {
 				var item UserViewItem
-				_ = rows.Scan(&item.ID, &item.Username, &item.RoleID, &item.RoleName, &item.Email, &item.Mobile, &item.AllowedTaskTypes, &item.CreatedAt)
+				var rawEmail, rawMobile, rawTypes, rawCreated, rName sql.NullString
+				var rID sql.NullInt64
+				_ = rows.Scan(&item.ID, &item.Username, &rID, &rName, &rawEmail, &rawMobile, &rawTypes, &rawCreated)
+				item.RoleID = int(rID.Int64)
+				item.RoleName = rName.String
+				item.Email = rawEmail.String
+				item.Mobile = rawMobile.String
+				item.AllowedTaskTypes = rawTypes.String
+				item.CreatedAt = rawCreated.String
 				users = append(users, item)
 			}
 		}

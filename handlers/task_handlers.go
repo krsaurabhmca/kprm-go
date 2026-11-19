@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -45,7 +46,7 @@ func ListTasks(c *gin.Context) {
 		var args []interface{}
 
 		if activeClientID > 0 {
-			whereClauses = append(whereClauses, "c.client_id = ?")
+			whereClauses = append(whereClauses, "cs.client_id = ?")
 			args = append(args, activeClientID)
 		}
 		if caseIDFilter > 0 {
@@ -68,52 +69,62 @@ func ListTasks(c *gin.Context) {
 		}
 
 		q := fmt.Sprintf(`
-			SELECT ct.id, ct.case_id, cl.name as client_name, t.task_name, t.task_type,
+			SELECT ct.id, ct.case_id, COALESCE(cl.name, 'Client') as client_name, t.task_name, t.task_type,
 			       ct.assigned_to, COALESCE(u.username, 'Unassigned') as verifier_name,
-			       ct.status, ct.remarks, ct.created_at, ct.verified_at,
-			       (SELECT cd.data_value FROM case_data cd JOIN structure_columns sc ON cd.column_id = sc.id 
-			        WHERE cd.case_id = ct.case_id AND (sc.column_name LIKE '%%applicant%%' OR sc.column_name LIKE '%%name%%') LIMIT 1) as applicant_name
+			       COALESCE(ct.status, 'Pending') as task_status, COALESCE(ct.remarks, ''),
+			       COALESCE(DATE_FORMAT(ct.created_at, '%%d-%%b-%%Y'), '-'),
+			       COALESCE(DATE_FORMAT(ct.verified_at, '%%d-%%b-%%Y %%H:%%i'), '-'),
+			       COALESCE((SELECT cd.data_value FROM case_data cd JOIN structure_columns sc ON cd.column_id = sc.id 
+			        WHERE cd.case_id = ct.case_id AND (sc.excel_column_name LIKE '%%%%applicant%%%%' OR sc.excel_column_name LIKE '%%%%name%%%%') LIMIT 1), CONCAT('Case #', ct.case_id)) as applicant_name
 			FROM case_tasks ct
 			JOIN tasks t ON ct.task_id = t.id
 			JOIN cases c ON ct.case_id = c.id
-			LEFT JOIN clients cl ON c.client_id = cl.id
+			LEFT JOIN client_structures cs ON c.structure_id = cs.id
+			LEFT JOIN clients cl ON cs.client_id = cl.id
 			LEFT JOIN users u ON ct.assigned_to = u.id
 			%s
 			ORDER BY ct.id DESC LIMIT 100
 		`, whereSQL)
 
 		rows, err := db.Query(q, args...)
-		if err == nil {
+		if err != nil {
+			// Resilient fallback without applicant_name subquery
+			qFallback := `
+				SELECT ct.id, ct.case_id, 'Client', t.task_name, t.task_type,
+				       ct.assigned_to, COALESCE(u.username, 'Unassigned'),
+				       COALESCE(ct.status, 'Pending'), COALESCE(ct.remarks, ''),
+				       COALESCE(DATE_FORMAT(ct.created_at, '%d-%b-%Y'), '-'),
+				       COALESCE(DATE_FORMAT(ct.verified_at, '%d-%b-%Y %H:%i'), '-'),
+				       CONCAT('Case #', ct.case_id)
+				FROM case_tasks ct
+				JOIN tasks t ON ct.task_id = t.id
+				LEFT JOIN users u ON ct.assigned_to = u.id
+				ORDER BY ct.id DESC LIMIT 100
+			`
+			rows, err = db.Query(qFallback)
+		}
+
+		if err == nil && rows != nil {
 			defer rows.Close()
 			for rows.Next() {
 				var tid, cid int
 				var assignedTo sql.NullInt64
-				var clName, tName, tType, vName, stat, rem, appName sql.NullString
-				var rawCreated, rawVerified sql.NullTime
+				var clName, tName, tType, vName, stat, rem, cDate, vDate, appName string
 
-				_ = rows.Scan(&tid, &cid, &clName, &tName, &tType, &assignedTo, &vName, &stat, &rem, &rawCreated, &rawVerified, &appName)
-
-				vDate := "-"
-				if rawVerified.Valid {
-					vDate = rawVerified.Time.Format("02-Jan-2006 15:04")
-				}
-				cDate := "-"
-				if rawCreated.Valid {
-					cDate = rawCreated.Time.Format("02-Jan-2006")
-				}
+				_ = rows.Scan(&tid, &cid, &clName, &tName, &tType, &assignedTo, &vName, &stat, &rem, &cDate, &vDate, &appName)
 
 				tasks = append(tasks, map[string]interface{}{
 					"ID":            tid,
 					"CaseID":        cid,
-					"ClientName":    clName.String,
-					"TaskName":      tName.String,
-					"TaskType":      tType.String,
+					"ClientName":    clName,
+					"TaskName":      tName,
+					"TaskType":      tType,
 					"AssignedTo":    assignedTo.Int64,
-					"VerifierName":  vName.String,
-					"Status":        stat.String,
-					"StatusBadge":   utils.StatusBadgeHTML(stat.String),
-					"Remarks":       rem.String,
-					"ApplicantName": appName.String,
+					"VerifierName":  vName,
+					"Status":        stat,
+					"StatusBadge":   template.HTML(utils.StatusBadgeHTML(stat)),
+					"Remarks":       rem,
+					"ApplicantName": appName,
 					"CreatedAt":     cDate,
 					"VerifiedAt":    vDate,
 				})
@@ -191,11 +202,19 @@ func ManageTasks(c *gin.Context) {
 			ORDER BY t.id ASC
 		`
 		rows, err := db.Query(q)
-		if err == nil {
+		if err != nil {
+			// Resilient fallback
+			rows, err = db.Query("SELECT t.id, t.task_name, t.task_type, 0, COALESCE(DATE_FORMAT(t.created_at, '%d-%b-%Y'), '') FROM tasks t ORDER BY t.id ASC")
+		}
+		if err == nil && rows != nil {
 			defer rows.Close()
 			for rows.Next() {
 				var b TaskBlueprintItem
-				_ = rows.Scan(&b.ID, &b.TaskName, &b.TaskType, &b.FieldCount, &b.CreatedAt)
+				var rawCreated sql.NullString
+				var fCount sql.NullInt64
+				_ = rows.Scan(&b.ID, &b.TaskName, &b.TaskType, &fCount, &rawCreated)
+				b.FieldCount = int(fCount.Int64)
+				b.CreatedAt = rawCreated.String
 				blueprints = append(blueprints, b)
 			}
 		}

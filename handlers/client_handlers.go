@@ -22,6 +22,7 @@ type ClientViewItem struct {
 	Email                 string
 	AgencyName            string
 	AgencyStamp           string
+	StampImage            string
 	EmailReportingEnabled int
 	StructureCount        int
 	CaseCount             int
@@ -50,6 +51,7 @@ func ListClients(c *gin.Context) {
 			for rows.Next() {
 				var item ClientViewItem
 				_ = rows.Scan(&item.ID, &item.Name, &item.Email, &item.AgencyName, &item.AgencyStamp, &item.EmailReportingEnabled, &item.CreatedAt, &item.StructureCount, &item.CaseCount)
+				item.StampImage = item.AgencyStamp
 				clients = append(clients, item)
 			}
 		} else {

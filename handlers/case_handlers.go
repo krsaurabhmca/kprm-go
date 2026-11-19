@@ -54,7 +54,7 @@ func ListCases(c *gin.Context) {
 		var args []interface{}
 
 		if activeClientID > 0 {
-			whereClauses = append(whereClauses, "c.client_id = ?")
+			whereClauses = append(whereClauses, "cs.client_id = ?")
 			args = append(args, activeClientID)
 		}
 
@@ -62,15 +62,15 @@ func ListCases(c *gin.Context) {
 			if strings.EqualFold(statusFilter, "Closed") {
 				whereClauses = append(whereClauses, "c.is_closed = 1")
 			} else {
-				whereClauses = append(whereClauses, "c.overall_status = ?")
+				whereClauses = append(whereClauses, "c.status = ?")
 				args = append(args, statusFilter)
 			}
 		}
 
 		if search != "" {
-			whereClauses = append(whereClauses, "(c.id = ? OR c.client_ref_no LIKE ? OR EXISTS (SELECT 1 FROM case_data cd WHERE cd.case_id = c.id AND cd.data_value LIKE ?))")
+			whereClauses = append(whereClauses, "(c.id = ? OR EXISTS (SELECT 1 FROM case_data cd WHERE cd.case_id = c.id AND cd.data_value LIKE ?))")
 			caseIDSearch, _ := strconv.Atoi(search)
-			args = append(args, caseIDSearch, "%"+search+"%", "%"+search+"%")
+			args = append(args, caseIDSearch, "%"+search+"%")
 		}
 
 		whereSQL := ""
@@ -79,21 +79,22 @@ func ListCases(c *gin.Context) {
 		}
 
 		// Count total
-		countQuery := "SELECT COUNT(*) FROM cases c" + whereSQL
+		countQuery := "SELECT COUNT(*) FROM cases c LEFT JOIN client_structures cs ON c.structure_id = cs.id" + whereSQL
 		_ = db.QueryRow(countQuery, args...).Scan(&totalCases)
 
 		// Fetch page
 		listQuery := fmt.Sprintf(`
-			SELECT c.id, c.client_id, cl.name as client_name, cs.structure_name, c.overall_status, c.is_closed, c.created_at,
+			SELECT c.id, COALESCE(cs.client_id, 0), COALESCE(cl.name, 'Client') as client_name, COALESCE(cs.sheet_name, 'Format') as structure_name,
+			       COALESCE(c.status, 'Pending') as status, c.is_closed, COALESCE(DATE_FORMAT(c.created_at, '%%d-%%b-%%Y'), '-'),
 			       (SELECT COUNT(*) FROM case_tasks ct WHERE ct.case_id = c.id) as total_tasks,
 			       (SELECT COUNT(*) FROM case_tasks ct WHERE ct.case_id = c.id AND ct.status IN ('Positive', 'Negative', 'CNV')) as completed_tasks,
-			       (SELECT cd.data_value FROM case_data cd JOIN structure_columns sc ON cd.column_id = sc.id 
-			        WHERE cd.case_id = c.id AND (sc.column_name LIKE '%%applicant%%' OR sc.column_name LIKE '%%name%%') LIMIT 1) as applicant_name,
-			       (SELECT cd.data_value FROM case_data cd JOIN structure_columns sc ON cd.column_id = sc.id 
-			        WHERE cd.case_id = c.id AND (sc.column_name LIKE '%%ref%%' OR sc.column_name LIKE '%%loan%%' OR sc.column_name LIKE '%%app%%no%%') LIMIT 1) as client_ref_no
+			       COALESCE((SELECT cd.data_value FROM case_data cd JOIN structure_columns sc ON cd.column_id = sc.id 
+			        WHERE cd.case_id = c.id AND (sc.excel_column_name LIKE '%%%%applicant%%%%' OR sc.excel_column_name LIKE '%%%%name%%%%') LIMIT 1), CONCAT('Case #', c.id)) as applicant_name,
+			       COALESCE((SELECT cd.data_value FROM case_data cd JOIN structure_columns sc ON cd.column_id = sc.id 
+			        WHERE cd.case_id = c.id AND (sc.excel_column_name LIKE '%%%%ref%%%%' OR sc.excel_column_name LIKE '%%%%loan%%%%' OR sc.excel_column_name LIKE '%%%%app%%%%no%%%%') LIMIT 1), '-') as client_ref_no
 			FROM cases c
-			LEFT JOIN clients cl ON c.client_id = cl.id
 			LEFT JOIN client_structures cs ON c.structure_id = cs.id
+			LEFT JOIN clients cl ON cs.client_id = cl.id
 			%s
 			ORDER BY c.id DESC
 			LIMIT %d OFFSET %d
@@ -104,26 +105,18 @@ func ListCases(c *gin.Context) {
 			defer rows.Close()
 			for rows.Next() {
 				var item CaseListItem
-				var rawTime, appName, refNo, overallStat sql.NullString
+				var rawTime, appName, refNo, overallStat string
 				_ = rows.Scan(
 					&item.ID, &item.ClientID, &item.ClientName, &item.StructureName,
 					&overallStat, &item.IsClosed, &rawTime,
 					&item.TotalTasks, &item.CompletedTasks,
 					&appName, &refNo,
 				)
-				item.OverallStatus = overallStat.String
-				if item.OverallStatus == "" {
-					item.OverallStatus = "Pending"
-				}
-				item.ApplicantName = appName.String
-				if item.ApplicantName == "" {
-					item.ApplicantName = fmt.Sprintf("Case #%d", item.ID)
-				}
-				item.ClientRefNo = refNo.String
-				if rawTime.Valid {
-					item.CreatedAt = utils.FormatDateString(rawTime.String, "02-Jan-2006 15:04")
-					item.TAT = utils.CalculateTAT(rawTime.String, "")
-				}
+				item.OverallStatus = overallStat
+				item.ApplicantName = appName
+				item.ClientRefNo = refNo
+				item.CreatedAt = utils.FormatDateString(rawTime, "02-Jan-2006 15:04")
+				item.TAT = utils.CalculateTAT(rawTime, "")
 				cases = append(cases, item)
 			}
 		}

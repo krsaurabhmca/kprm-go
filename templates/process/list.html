@@ -54,7 +54,7 @@
                             <div class="fw-bold text-dark">{{ .TaskName }}</div>
                             <span class="badge badge-secondary">{{ .TaskType }}</span>
                         </td>
-                        <td class="text-center">{{ .StatusBadge }}</td>
+                        <td class="text-center">{{ safeHTML .StatusBadge }}</td>
                         <td class="text-muted font-monospace">{{ .CreatedAt }}</td>
                         <td class="text-end pe-3">
                             <button type="button" class="btn btn-sm btn-primary shadow-sm" onclick="openVerificationModal({{ .ID }}, '{{ .TaskName }}')">

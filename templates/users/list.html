@@ -8,7 +8,7 @@
         </div>
         <div class="d-flex gap-2">
             <input type="text" id="userSearchInput" class="form-control form-control-sm" placeholder="Search user, role, email..." style="max-width: 240px;" onkeyup="filterUserTable()">
-            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm text-nowrap" onclick="openCreateUserModal()">
+            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#userFormModal" onclick="openCreateUserModal()">
                 <i class="bi bi-person-plus me-1"></i> Add New User
             </button>
         </div>
@@ -148,7 +148,8 @@ function openCreateUserModal() {
     document.getElementById('modal_mobile').value = '';
     document.getElementById('modal_allowed_task_types').value = '';
     document.getElementById('modalSubmitBtn').innerText = 'Create User';
-    const modal = new bootstrap.Modal(document.getElementById('userFormModal'));
+    const modalEl = document.getElementById('userFormModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
 }
 
@@ -165,7 +166,8 @@ function openEditUserModal(id, username, roleId, email, mobile, allowed) {
     document.getElementById('modal_mobile').value = mobile;
     document.getElementById('modal_allowed_task_types').value = allowed;
     document.getElementById('modalSubmitBtn').innerText = 'Update User';
-    const modal = new bootstrap.Modal(document.getElementById('userFormModal'));
+    const modalEl = document.getElementById('userFormModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
 }
 

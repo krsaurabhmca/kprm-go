@@ -63,33 +63,60 @@
             </div>
 
             <!-- Event Notification Templates -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="bi bi-chat-quote me-2 text-info"></i> Strict 2-Event Automation Templates</h5>
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><i class="bi bi-chat-quote me-2 text-info"></i> Notification &amp; Dispatch Templates</h5>
                 </div>
                 <div class="list-group list-group-flush fs-13">
+                    {{ range .Templates }}
                     <div class="list-group-item p-3">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="fw-bold mb-0 text-dark">1. On Task Assigned (WhatsApp)</h6>
-                            <span class="badge badge-success">Active</span>
+                            <h6 class="fw-bold mb-0 text-dark">{{ .EventName }}</h6>
+                            <span class="badge {{ if eq .Channel "whatsapp" }}badge-success{{ else }}badge-primary{{ end }} text-uppercase">{{ .Channel }}</span>
                         </div>
-                        <p class="text-secondary small mb-2">Dispatches case &amp; task details to the assigned Verifier via WhatsApp.</p>
-                        <div class="p-2 bg-light rounded border font-monospace text-muted fs-11">
-                            Task: #Task_Name# | Case: #Case_ID# | Applicant: #Applicant_Name#
-                        </div>
+                        {{ if .Subject.Valid }}
+                            {{ if .Subject.String }}
+                                <p class="text-secondary small mb-1"><strong>Subject:</strong> {{ .Subject.String }}</p>
+                            {{ end }}
+                        {{ end }}
+                        <div class="p-2 bg-light rounded border font-monospace text-muted fs-11" style="white-space: pre-wrap;">{{ .Body }}</div>
                     </div>
-                    <div class="list-group-item p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="fw-bold mb-0 text-dark">2. On Case Reviewed (Email)</h6>
-                            <span class="badge badge-primary">Active</span>
-                        </div>
-                        <p class="text-secondary small mb-2">Dispatches finalized case summary &amp; remarks report to the Client.</p>
-                        <div class="p-2 bg-light rounded border font-monospace text-muted fs-11">
-                            Outcome: #Overall_Status# | Findings: #Remarks#
-                        </div>
-                    </div>
+                    {{ else }}
+                    <div class="p-3 text-center text-muted small fst-italic">No communication templates registered.</div>
+                    {{ end }}
                 </div>
             </div>
+
+            <!-- Task Type Channel Routing -->
+            {{ if .Mappings }}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="bi bi-diagram-3 me-2 text-primary"></i> Task Type Channel Routing</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Task Type</th>
+                                <th>Status Rule</th>
+                                <th class="text-center">SMTP Account</th>
+                                <th class="text-center">WhatsApp Account</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Mappings }}
+                            <tr>
+                                <td class="ps-3 fw-bold text-dark"><span class="badge badge-secondary">{{ .TaskType }}</span></td>
+                                <td>{{ .Status }}</td>
+                                <td class="text-center font-monospace">{{ if .SmtpID }}Account #{{ .SmtpID }}{{ else }}-{{ end }}</td>
+                                <td class="text-center font-monospace">{{ if .WhatsappID }}Account #{{ .WhatsappID }}{{ else }}-{{ end }}</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {{ end }}
         </div>
 
         <!-- Test Dispatch Sidebar -->

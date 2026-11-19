@@ -18,6 +18,14 @@ func ShowWhatsAppChat(c *gin.Context) {
 	db := database.GetDB()
 
 	var accounts []models.CommunicationAccount
+	type VerifierContact struct {
+		ID       int
+		Username string
+		Mobile   string
+		RoleName string
+	}
+	var contacts []VerifierContact
+
 	if db != nil {
 		rows, err := db.Query("SELECT id, account_type, title, config_json, is_default, status, created_at FROM communication_accounts WHERE account_type = 'whatsapp' ORDER BY is_default DESC, id ASC")
 		if err == nil {
@@ -28,9 +36,20 @@ func ShowWhatsAppChat(c *gin.Context) {
 				accounts = append(accounts, a)
 			}
 		}
+
+		cRows, _ := db.Query("SELECT u.id, u.username, u.mobile, COALESCE(r.role_name, 'Staff') FROM users u LEFT JOIN user_roles r ON u.role_id = r.id WHERE u.mobile IS NOT NULL AND u.mobile != '' ORDER BY u.username ASC")
+		if cRows != nil {
+			defer cRows.Close()
+			for cRows.Next() {
+				var vc VerifierContact
+				_ = cRows.Scan(&vc.ID, &vc.Username, &vc.Mobile, &vc.RoleName)
+				contacts = append(contacts, vc)
+			}
+		}
 	}
 
 	data["Accounts"] = accounts
+	data["Contacts"] = contacts
 	c.HTML(http.StatusOK, "whatsapp/chat.html", data)
 }
 

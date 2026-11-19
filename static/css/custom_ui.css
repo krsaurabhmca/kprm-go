@@ -2043,3 +2043,70 @@
     border-color: #bfdbfe;
     color: var(--primary-color, #4f46e5);
 }
+
+/* ========================================================
+   COMPACT & MODERN ENTERPRISE UI POLISH
+   ======================================================== */
+.table.styled-table td, 
+.table.styled-table th {
+    padding: 0.55rem 0.75rem !important;
+    vertical-align: middle !important;
+    font-size: 0.815rem !important;
+}
+
+.table.styled-table thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.05em !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.table.styled-table tbody tr {
+    transition: background-color 0.15s ease-in-out;
+}
+
+.table.styled-table tbody tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+.btn-sm {
+    padding: 0.3rem 0.65rem !important;
+    font-size: 0.785rem !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+}
+
+.badge {
+    padding: 0.25rem 0.55rem !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    text-transform: uppercase !important;
+}
+
+.badge-primary { background: #e0e7ff !important; color: #4338ca !important; border: 1px solid #c7d2fe; }
+.badge-success { background: #dcfce7 !important; color: #15803d !important; border: 1px solid #bbf7d0; }
+.badge-warning { background: #fef3c7 !important; color: #b45309 !important; border: 1px solid #fde68a; }
+.badge-secondary { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #e2e8f0; }
+
+.card {
+    border-radius: 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    margin-bottom: 1.25rem !important;
+}
+
+.card-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.form-control-sm, .form-select-sm {
+    font-size: 0.815rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-radius: 6px !important;
+}
