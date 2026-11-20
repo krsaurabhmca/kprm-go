@@ -4,46 +4,164 @@
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h1 class="h3 fw-bold text-dark mb-1">System Settings &amp; DEV Utilities</h1>
-            <p class="text-secondary small mb-0">Configure external partner APIs, inspect upload assets, and audit webhook telemetry</p>
+            <p class="text-secondary small mb-0">Manage global branding, API integrations, diagnostic tools, and user profile</p>
         </div>
     </div>
 
     <!-- Settings Tabs Navigation -->
     <ul class="nav nav-tabs mb-4 border-bottom">
         <li class="nav-item">
-            <a class="nav-link {{ if eq .ActiveTab "external_apis" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=external_apis">
+            <a class="nav-link {{ if eq .ActiveTab "basic" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=basic">
+                <i class="bi bi-sliders me-1"></i> Basic Settings
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ if eq .ActiveTab "profile" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=profile">
+                <i class="bi bi-person-circle me-1"></i> Profile &amp; Security
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ if eq .ActiveTab "external_api" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=external_api">
                 <i class="bi bi-cloud-arrow-up me-1"></i> External APIs
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{ if eq .ActiveTab "api_diagnostics" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=api_diagnostics">
-                <i class="bi bi-activity me-1"></i> API Diagnostics &amp; Webhook Sandbox
+                <i class="bi bi-activity me-1"></i> API Diagnostics
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {{ if eq .ActiveTab "file_manager" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=file_manager">
-                <i class="bi bi-folder-check me-1"></i> Upload Assets Manager
+            <a class="nav-link {{ if eq .ActiveTab "files" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=files">
+                <i class="bi bi-folder-check me-1"></i> Upload Assets
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ if eq .ActiveTab "system" }}active fw-bold text-primary{{ else }}text-secondary{{ end }}" href="/settings?tab=system">
+                <i class="bi bi-cpu me-1"></i> System Telemetry
             </a>
         </li>
     </ul>
 
-    <!-- Tab 1: External APIs -->
-    {{ if eq .ActiveTab "external_apis" }}
-    <div class="card p-4" style="max-width: 800px;">
-        <h5 class="card-title mb-3"><i class="bi bi-gear-wide-connected text-primary me-2"></i> External Digital Verification Endpoints</h5>
+    <!-- Tab 1: Basic Settings -->
+    {{ if eq .ActiveTab "basic" }}
+    <div class="card p-4 shadow-sm border-0" style="max-width: 850px;">
+        <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-sliders text-primary me-2"></i> Application Branding &amp; General Configuration</h5>
         <form action="/settings" method="POST">
-            <input type="hidden" name="tab" value="external_apis">
+            <input type="hidden" name="tab" value="basic">
+            
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Application Name</label>
+                    <input type="text" name="app_name" class="form-control" value="{{ index .Settings "app_name" }}" required>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Company / Organization Name</label>
+                    <input type="text" name="company_name" class="form-control" value="{{ index .Settings "company_name" }}" required>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Application Tagline</label>
+                    <input type="text" name="app_tagline" class="form-control" placeholder="Case Management Platform" value="{{ index .Settings "app_tagline" }}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Support / Contact Email</label>
+                    <input type="email" name="company_email" class="form-control" placeholder="support@kprm.in" value="{{ index .Settings "company_email" }}">
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Contact Phone / WhatsApp</label>
+                    <input type="text" name="company_phone" class="form-control" placeholder="+91 9876543210" value="{{ index .Settings "company_phone" }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Currency Symbol</label>
+                    <input type="text" name="currency_symbol" class="form-control font-monospace" value="{{ index .Settings "currency_symbol" }}">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Timezone</label>
+                    <input type="text" name="app_timezone" class="form-control" value="{{ index .Settings "app_timezone" }}">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Custom Footer Text</label>
+                    <input type="text" name="footer_text" class="form-control" value="{{ index .Settings "footer_text" }}">
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Developer Credit</label>
+                    <input type="text" name="developer_credit" class="form-control" value="{{ index .Settings "developer_credit" }}">
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label fs-13 fw-semibold text-secondary">Developer URL</label>
+                    <input type="url" name="developer_url" class="form-control" placeholder="https://..." value="{{ index .Settings "developer_url" }}">
+                </div>
+            </div>
+
+            <div class="mt-4 pt-2 border-top">
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <i class="bi bi-save me-1"></i> Save Basic Information
+                </button>
+            </div>
+        </form>
+    </div>
+    {{ end }}
+
+    <!-- Tab 2: Profile & Security -->
+    {{ if eq .ActiveTab "profile" }}
+    <div class="card p-4 shadow-sm border-0" style="max-width: 650px;">
+        <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-person-circle text-primary me-2"></i> Account Profile &amp; Password</h5>
+        <form action="/settings" method="POST">
+            <input type="hidden" name="tab" value="profile">
+            <input type="hidden" name="action" value="update_profile">
+
             <div class="mb-3">
-                <label class="form-label fs-13 fw-semibold text-secondary">Banking Verification Endpoint URL (update_banking)</label>
-                <input type="url" name="api_banking_endpoint" class="form-control" placeholder="https://partner.api/v1/banking/verify" value="{{ index .Settings "api_banking_endpoint" }}">
+                <label class="form-label fs-13 fw-semibold text-secondary">Username</label>
+                <input type="text" class="form-control bg-light" value="{{ .Profile.Username }}" readonly>
+                <div class="form-text fs-11">Username cannot be modified. Role: <strong>{{ .Profile.RoleName }}</strong></div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fs-13 fw-semibold text-secondary">Email Address</label>
+                <input type="email" name="email" class="form-control" value="{{ .Profile.Email }}" placeholder="admin@domain.com">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fs-13 fw-semibold text-secondary">Mobile / WhatsApp Number</label>
+                <input type="text" name="mobile" class="form-control" value="{{ .Profile.Mobile }}" placeholder="+919876543210">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fs-13 fw-semibold text-secondary">New Password (leave blank to keep current)</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter new password">
+            </div>
+
+            <div class="pt-2 border-top">
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <i class="bi bi-check2 me-1"></i> Update Profile
+                </button>
+            </div>
+        </form>
+    </div>
+    {{ end }}
+
+    <!-- Tab 3: External APIs -->
+    {{ if eq .ActiveTab "external_api" }}
+    <div class="card p-4 shadow-sm border-0" style="max-width: 850px;">
+        <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-gear-wide-connected text-primary me-2"></i> External Digital Verification Endpoints</h5>
+        <p class="text-secondary small mb-4">Connect partner API servers for automated Banking statement and ITR / ITO digital inquiries.</p>
+        
+        <form action="/settings" method="POST">
+            <input type="hidden" name="tab" value="external_api">
+            <div class="mb-3">
+                <label class="form-label fs-13 fw-semibold text-secondary">Banking Verification Endpoint URL (<code>update_banking</code>)</label>
+                <input type="url" name="api_banking_endpoint" class="form-control font-monospace fs-13" placeholder="https://partner.api/v1/banking/verify" value="{{ index .Settings "api_banking_endpoint" }}">
             </div>
             <div class="mb-3">
-                <label class="form-label fs-13 fw-semibold text-secondary">ITR / ITO Verification Endpoint URL (update_itr)</label>
-                <input type="url" name="api_itr_endpoint" class="form-control" placeholder="https://partner.api/v1/itr/verify" value="{{ index .Settings "api_itr_endpoint" }}">
+                <label class="form-label fs-13 fw-semibold text-secondary">ITR / ITO Verification Endpoint URL (<code>update_itr</code>)</label>
+                <input type="url" name="api_itr_endpoint" class="form-control font-monospace fs-13" placeholder="https://partner.api/v1/itr/verify" value="{{ index .Settings "api_itr_endpoint" }}">
             </div>
             <div class="mb-3">
                 <label class="form-label fs-13 fw-semibold text-secondary">External API Partner Authorization Key</label>
-                <input type="text" name="api_partner_key" class="form-control" placeholder="Bearer ..." value="{{ index .Settings "api_partner_key" }}">
+                <input type="text" name="api_partner_key" class="form-control font-monospace fs-13" placeholder="Bearer ..." value="{{ index .Settings "api_partner_key" }}">
             </div>
             <div class="mb-4">
                 <label class="form-label fs-13 fw-semibold text-secondary">Auto-Dispatch on Task Creation</label>
@@ -52,18 +170,22 @@
                     <option value="0" {{ if ne (index .Settings "api_auto_dispatch") "1" }}selected{{ end }}>Disabled (Manual trigger only)</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary px-4 fw-semibold">Save Configuration</button>
+            <div class="pt-2 border-top">
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <i class="bi bi-save me-1"></i> Save API Configuration
+                </button>
+            </div>
         </form>
     </div>
     {{ end }}
 
-    <!-- Tab 2: API Diagnostics & Webhook Sandbox -->
+    <!-- Tab 4: API Diagnostics & Webhook Sandbox -->
     {{ if eq .ActiveTab "api_diagnostics" }}
     <div class="row g-4">
         <div class="col-12 col-lg-6">
-            <div class="card p-4">
-                <h5 class="card-title mb-3"><i class="bi bi-arrow-repeat text-success me-2"></i> Inbound Webhook Simulator</h5>
-                <p class="text-secondary small mb-3">Simulate an incoming callback from external verification partners to test automatic status resolution.</p>
+            <div class="card p-4 shadow-sm border-0">
+                <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-arrow-repeat text-success me-2"></i> Inbound Webhook Simulator</h5>
+                <p class="text-secondary small mb-3">Simulate an incoming callback from external verification partners to test automatic status progression into the Review Queue.</p>
                 <form action="/settings/diagnostics/callback" method="POST">
                     <div class="mb-3">
                         <label class="form-label fs-13 fw-semibold text-secondary">Target Case Task ID <span class="text-danger">*</span></label>
@@ -81,65 +203,63 @@
                         <label class="form-label fs-13 fw-semibold text-secondary">Callback Remarks Narrative</label>
                         <textarea name="remarks" class="form-control" rows="3">Verification confirmed authentic by automated partner API telemetry.</textarea>
                     </div>
-                    <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-semibold shadow-sm">
                         <i class="bi bi-play-circle me-1"></i> Trigger Simulated Callback
                     </button>
                 </form>
             </div>
         </div>
         <div class="col-12 col-lg-6">
-            <div class="card p-4">
-                <h5 class="card-title mb-3"><i class="bi bi-info-circle text-primary me-2"></i> Inbound Webhook Specifications</h5>
-                <p class="text-secondary small">External partners can deliver asynchronous verification results to:</p>
+            <div class="card p-4 shadow-sm border-0">
+                <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i> Inbound Webhook Receiver</h5>
+                <p class="text-secondary small">External partners deliver asynchronous verification results to:</p>
                 <div class="p-2 bg-light rounded border font-monospace text-primary fs-12 mb-3">
                     POST /api/task_callback<br>
                     POST /api_task_update
                 </div>
-                <h6 class="fw-bold fs-13">Supported JSON Schema:</h6>
+                <h6 class="fw-bold fs-13">Supported JSON Payload Schema:</h6>
                 <pre class="p-3 bg-dark text-white rounded font-monospace fs-11">{
-  "task_id": 15,
+  "ref_id": 15,
   "status": "Positive",
-  "remarks": "Bank account verified successfully.",
-  "attachment_url": "https://..."
+  "remarks": "Bank statement transactions validated successfully.",
+  "attachment_link": "https://..."
 }</pre>
             </div>
         </div>
     </div>
     {{ end }}
 
-    <!-- Tab 3: File Manager -->
-    {{ if eq .ActiveTab "file_manager" }}
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title"><i class="bi bi-folder2-open me-2 text-primary"></i> Upload Storage Directory (uploads/)</h5>
-        </div>
+    <!-- Tab 5: Upload Assets Manager -->
+    {{ if eq .ActiveTab "files" }}
+    <div class="card p-4 shadow-sm border-0">
+        <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-folder2-open text-primary me-2"></i> Upload Assets Directory ({{ len .Files }} files)</h5>
         <div class="table-responsive">
             <table class="table styled-table table-hover align-middle mb-0 fs-13">
                 <thead>
                     <tr>
-                        <th class="ps-3">Category</th>
-                        <th>File Name</th>
-                        <th class="text-center">File Size</th>
-                        <th>Last Modified</th>
-                        <th class="text-end pe-3">Preview</th>
+                        <th class="ps-3">File Name</th>
+                        <th>Category</th>
+                        <th>File Size</th>
+                        <th>Modified</th>
+                        <th class="text-end pe-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {{ range .Files }}
                     <tr>
-                        <td class="ps-3"><span class="badge badge-secondary">{{ .Category }}</span></td>
-                        <td class="fw-semibold font-monospace text-dark">{{ .Name }}</td>
-                        <td class="text-center font-monospace text-muted">{{ .Size }}</td>
-                        <td class="text-muted font-monospace">{{ .ModTime }}</td>
+                        <td class="ps-3 fw-semibold font-monospace text-dark">{{ .Name }}</td>
+                        <td><span class="badge badge-secondary fs-10">{{ .Category }}</span></td>
+                        <td class="text-muted">{{ .Size }}</td>
+                        <td class="text-muted font-monospace fs-12">{{ .ModTime }}</td>
                         <td class="text-end pe-3">
-                            <a href="/file-viewer?file={{ .Path }}" class="btn btn-sm btn-primary" target="_blank">
+                            <a href="/file-viewer?file={{ .Path }}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11px;" target="_blank">
                                 <i class="bi bi-eye"></i> View
                             </a>
                         </td>
                     </tr>
                     {{ else }}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted fst-italic">No uploaded documents or logs.</td>
+                        <td colspan="5" class="text-center py-4 text-muted fst-italic">No uploaded files stored on disk.</td>
                     </tr>
                     {{ end }}
                 </tbody>
@@ -147,6 +267,40 @@
         </div>
     </div>
     {{ end }}
+
+    <!-- Tab 6: System Telemetry -->
+    {{ if eq .ActiveTab "system" }}
+    <div class="card p-4 shadow-sm border-0" style="max-width: 800px;">
+        <h5 class="card-title fw-bold text-dark mb-3"><i class="bi bi-cpu text-primary me-2"></i> System Telemetry &amp; Runtime Environment</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm fs-13 mb-0">
+                <tbody>
+                    <tr>
+                        <td class="fw-bold bg-light" style="width: 200px;">Application Engine</td>
+                        <td><span class="badge bg-primary">Go / Gin Platform</span></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">Go Compiler Version</td>
+                        <td class="font-monospace text-primary">{{ .GoVersion }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">Operating System / Arch</td>
+                        <td class="font-monospace">{{ .ServerOS }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">Database Name</td>
+                        <td class="font-monospace text-success">{{ .DBName }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold bg-light">Storage Directory</td>
+                        <td class="font-monospace text-secondary">{{ .UploadDir }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{ end }}
+
 </div>
 
 {{ template "footer.html" . }}

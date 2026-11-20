@@ -2,17 +2,41 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"kprm2/database"
 	"kprm2/middleware"
 	"kprm2/models"
 	"kprm2/utils"
 )
+
+type ReportTemplateDetail struct {
+	ID           int    `json:"id"`
+	ClientID     int    `json:"client_id"`
+	ClientName   string `json:"client_name"`
+	Name         string `json:"name"`
+	SheetName    string `json:"sheet_name"`
+	MaxRow       int    `json:"max_row"`
+	MaxCol       string `json:"max_col"`
+	LayoutConfig string `json:"layout_config"`
+}
+
+type AvailableColumnItem struct {
+	SheetName       string `json:"sheet_name"`
+	CellAddress     string `json:"cell_address"`
+	ExcelColumnName string `json:"excel_column_name"`
+}
+
+type ReportCellMapping struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
 
 // ManageReports displays reports hub and templates list
 func ManageReports(c *gin.Context) {
@@ -84,6 +108,151 @@ func ManageReports(c *gin.Context) {
 	data["Templates"] = templates
 	data["Clients"] = clients
 	c.HTML(http.StatusOK, "reports/list.html", data)
+}
+
+// EditReportConfig handles the visual cell matrix mapping editor for report templates
+func EditReportConfig(c *gin.Context) {
+	reportIDStr := c.DefaultQuery("id", c.Query("report_id"))
+	reportID, _ := strconv.Atoi(reportIDStr)
+	if reportID == 0 {
+		c.Redirect(http.StatusFound, "/reports")
+		return
+	}
+
+	db := database.GetDB()
+	if db == nil {
+		c.Redirect(http.StatusFound, "/reports")
+		return
+	}
+
+	var tpl ReportTemplateDetail
+	var rawSheetName, rawMaxCol, rawLayout sql.NullString
+	var rawClientName sql.NullString
+	err := db.QueryRow(`
+		SELECT r.id, r.client_id, r.name, r.sheet_name, COALESCE(r.max_row, 30), r.max_col, r.layout_config, c.name as client_name
+		FROM report_templates r
+		LEFT JOIN clients c ON r.client_id = c.id
+		WHERE r.id = ?
+	`, reportID).Scan(&tpl.ID, &tpl.ClientID, &tpl.Name, &rawSheetName, &tpl.MaxRow, &rawMaxCol, &rawLayout, &rawClientName)
+
+	if err != nil {
+		session := sessions.Default(c)
+		session.Set("error", "Report template not found.")
+		_ = session.Save()
+		c.Redirect(http.StatusFound, "/reports")
+		return
+	}
+
+	tpl.SheetName = rawSheetName.String
+	if tpl.SheetName == "" {
+		tpl.SheetName = "Sheet1"
+	}
+	tpl.MaxCol = strings.ToUpper(strings.TrimSpace(rawMaxCol.String))
+	if tpl.MaxCol == "" {
+		tpl.MaxCol = "G"
+	}
+	if tpl.MaxRow <= 0 {
+		tpl.MaxRow = 30
+	}
+	tpl.LayoutConfig = rawLayout.String
+	if tpl.LayoutConfig == "" {
+		tpl.LayoutConfig = "{}"
+	}
+	tpl.ClientName = rawClientName.String
+	if tpl.ClientName == "" {
+		tpl.ClientName = "Client Organization"
+	}
+
+	// Fetch available columns for the client
+	availableCols := make(map[string][]AvailableColumnItem)
+	cRows, err := db.Query(`
+		SELECT cs.sheet_name, sc.cell_address, sc.excel_column_name 
+		FROM structure_columns sc 
+		JOIN client_structures cs ON sc.structure_id = cs.id 
+		WHERE cs.client_id = ? 
+		ORDER BY cs.sheet_name, sc.cell_address
+	`, tpl.ClientID)
+	if err == nil {
+		defer cRows.Close()
+		for cRows.Next() {
+			var item AvailableColumnItem
+			_ = cRows.Scan(&item.SheetName, &item.CellAddress, &item.ExcelColumnName)
+			availableCols[item.SheetName] = append(availableCols[item.SheetName], item)
+		}
+	}
+
+	// Fetch existing mappings
+	mappings := make(map[string]ReportCellMapping)
+	mRows, err := db.Query(`
+		SELECT target_cell, mapping_type, mapping_value 
+		FROM report_mappings 
+		WHERE report_template_id = ?
+	`, reportID)
+	if err == nil {
+		defer mRows.Close()
+		for mRows.Next() {
+			var targetCell, mType, mValue string
+			_ = mRows.Scan(&targetCell, &mType, &mValue)
+			mappings[targetCell] = ReportCellMapping{
+				Type:  mType,
+				Value: mValue,
+			}
+		}
+	}
+
+	mappingsJSON, _ := json.Marshal(mappings)
+	availableColsJSON, _ := json.Marshal(availableCols)
+
+	data := middleware.GetBaseTemplateData(c, fmt.Sprintf("Report Config: %s", tpl.Name), "/reports")
+	data["Template"] = tpl
+	data["AvailableColumns"] = availableCols
+	data["AvailableColumnsJSON"] = string(availableColsJSON)
+	data["Mappings"] = mappings
+	data["MappingsJSON"] = string(mappingsJSON)
+	data["LayoutConfigJSON"] = tpl.LayoutConfig
+
+	c.HTML(http.StatusOK, "reports/config.html", data)
+}
+
+// SaveReportConfig saves layout and cell mappings for report template
+func SaveReportConfig(c *gin.Context) {
+	session := sessions.Default(c)
+	reportIDStr := c.PostForm("report_id")
+	reportID, _ := strconv.Atoi(reportIDStr)
+	if reportID == 0 {
+		c.Redirect(http.StatusFound, "/reports")
+		return
+	}
+
+	mappingsJSON := c.PostForm("mappings")
+	layoutConfigJSON := c.PostForm("layout_config")
+
+	db := database.GetDB()
+	if db != nil {
+		// Update layout_config
+		_, _ = db.Exec("UPDATE report_templates SET layout_config = ? WHERE id = ?", layoutConfigJSON, reportID)
+
+		// Delete old mappings
+		_, _ = db.Exec("DELETE FROM report_mappings WHERE report_template_id = ?", reportID)
+
+		// Parse new mappings
+		var mappings map[string]ReportCellMapping
+		if err := json.Unmarshal([]byte(mappingsJSON), &mappings); err == nil {
+			for cellID, mapData := range mappings {
+				if cellID != "" && mapData.Type != "" {
+					_, _ = db.Exec(`
+						INSERT INTO report_mappings (report_template_id, target_cell, mapping_type, mapping_value) 
+						VALUES (?, ?, ?, ?)
+					`, reportID, cellID, mapData.Type, mapData.Value)
+				}
+			}
+		}
+
+		session.Set("success", "Report configuration updated successfully.")
+		_ = session.Save()
+	}
+
+	c.Redirect(http.StatusFound, "/reports")
 }
 
 // GenerateReport generates HTML view, PDF print preview, or Excel MIS export
@@ -224,4 +393,3 @@ func GenerateReport(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "reports/preview.html", data)
 }
-

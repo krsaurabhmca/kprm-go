@@ -4,47 +4,81 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"kprm2/config"
 )
 
-var DB *sql.DB
+var (
+	DB          *sql.DB
+	LastDBError error
+	dbMu        sync.RWMutex
+)
 
+// InitDB establishes connection to MySQL with intelligent host fallback
 func InitDB(cfg *config.Config) (*sql.DB, error) {
 	loc, err := time.LoadLocation("Asia/Kolkata")
 	if err != nil {
 		loc = time.Local
 	}
 
-	mysqlCfg := mysql.NewConfig()
-	mysqlCfg.User = cfg.DBUser
-	mysqlCfg.Passwd = cfg.DBPass
-	mysqlCfg.Net = "tcp"
-	mysqlCfg.Addr = fmt.Sprintf("%s:%s", cfg.DBHost, cfg.DBPort)
-	mysqlCfg.DBName = cfg.DBName
-	mysqlCfg.ParseTime = true
-	mysqlCfg.Loc = loc
-	mysqlCfg.Collation = "utf8mb4_unicode_ci"
-	mysqlCfg.AllowNativePasswords = true
+	buildDSN := func(host string) string {
+		mysqlCfg := mysql.NewConfig()
+		mysqlCfg.User = cfg.DBUser
+		mysqlCfg.Passwd = cfg.DBPass
+		mysqlCfg.Net = "tcp"
+		mysqlCfg.Addr = fmt.Sprintf("%s:%s", host, cfg.DBPort)
+		mysqlCfg.DBName = cfg.DBName
+		mysqlCfg.ParseTime = true
+		mysqlCfg.Loc = loc
+		mysqlCfg.Collation = "utf8mb4_unicode_ci"
+		mysqlCfg.AllowNativePasswords = true
+		return mysqlCfg.FormatDSN()
+	}
 
-	dsn := mysqlCfg.FormatDSN()
+	primaryHost := cfg.DBHost
+	dsn := buildDSN(primaryHost)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, fmt.Errorf("error opening database: %w", err)
+		setDBError(fmt.Errorf("error opening database on %s: %w", primaryHost, err))
+		return nil, LastDBError
 	}
 
 	db.SetMaxOpenConns(50)
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	// Note: We don't fail immediately on ping so server can start and display a friendly DB message or reconnect if MySQL starts
-	if err := db.Ping(); err != nil {
-		log.Printf("⚠️ Warning: Initial database ping failed (%v). Ensure MySQL is running on %s:%s.", err, cfg.DBHost, cfg.DBPort)
+	// Attempt ping on primary host
+	pingErr := db.Ping()
+
+	// If primary was "localhost" and failed, attempt "127.0.0.1" (bypasses Unix socket vs TCP ambiguity on Linux)
+	if pingErr != nil && primaryHost == "localhost" {
+		log.Printf("⚠️ Primary ping on 'localhost' failed (%v). Trying '127.0.0.1' fallback...", pingErr)
+		fallbackDSN := buildDSN("127.0.0.1")
+		if fallbackDB, fErr := sql.Open("mysql", fallbackDSN); fErr == nil {
+			fallbackDB.SetMaxOpenConns(50)
+			fallbackDB.SetMaxIdleConns(25)
+			fallbackDB.SetConnMaxLifetime(5 * time.Minute)
+			if fallbackPingErr := fallbackDB.Ping(); fallbackPingErr == nil {
+				_ = db.Close()
+				db = fallbackDB
+				pingErr = nil
+				log.Printf("✅ Fallback connection to 127.0.0.1 succeeded!")
+			} else {
+				_ = fallbackDB.Close()
+			}
+		}
+	}
+
+	if pingErr != nil {
+		setDBError(pingErr)
+		log.Printf("⚠️ Warning: Initial database ping failed (%v). Ensure MySQL is running on %s:%s with DB '%s' and user '%s'.", pingErr, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBUser)
 	} else {
-		log.Printf("✅ Connected successfully to MySQL database: %s", cfg.DBName)
+		setDBError(nil)
+		log.Printf("✅ Connected successfully to MySQL database: %s (User: %s)", cfg.DBName, cfg.DBUser)
 		// Ensure Indian Standard Time offset
 		_, _ = db.Exec("SET time_zone = '+05:30'")
 		// Ensure basic essential auth tables and admin user are present
@@ -53,6 +87,29 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 
 	DB = db
 	return db, nil
+}
+
+func setDBError(err error) {
+	dbMu.Lock()
+	defer dbMu.Unlock()
+	LastDBError = err
+}
+
+// GetDBError returns any active database connection or ping error
+func GetDBError() error {
+	dbMu.RLock()
+	defer dbMu.RUnlock()
+	if DB == nil {
+		return fmt.Errorf("database driver not initialized")
+	}
+	if LastDBError != nil {
+		return LastDBError
+	}
+	// Verify with a lightweight ping
+	if err := DB.Ping(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func ensureEssentialTables(db *sql.DB) {

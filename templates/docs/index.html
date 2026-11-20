@@ -1,113 +1,570 @@
 {{ template "header.html" . }}
 
-<div class="content-body p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+<style>
+    .docs-container {
+        max-width: 1160px;
+        margin: 0 auto;
+        padding: 0.5rem 0 2.5rem;
+    }
+    .docs-header-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .docs-quick-nav {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .docs-quick-btn {
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #475569;
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+    .docs-quick-btn:hover {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+    .docs-section {
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .docs-section h2 {
+        margin-top: 0;
+        color: var(--text-main);
+        font-size: 1.18rem;
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.65rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .docs-section h3 {
+        color: var(--text-main);
+        font-size: 1rem;
+        font-weight: 700;
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    .docs-section p, .docs-section li {
+        color: var(--text-muted);
+        line-height: 1.6;
+        font-size: 0.9rem;
+    }
+    .docs-section ul, .docs-section ol {
+        padding-left: 1.25rem;
+    }
+    .docs-section pre {
+        background: #0f172a;
+        color: #f8fafc;
+        border: 1px solid #1e293b;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.82rem;
+        font-family: monospace;
+    }
+    
+    .function-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1rem;
+    }
+    .function-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.15rem;
+        transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .function-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border-color: #bfdbfe;
+    }
+    .function-card code {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.84rem;
+        color: var(--primary-color, #4f46e5);
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+        border-radius: 6px;
+        margin-bottom: 0.65rem;
+        font-weight: 700;
+        word-break: break-all;
+    }
+    .copy-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.2rem;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        margin-left: 0.5rem;
+    }
+    .copy-btn:hover {
+        background: #f1f5f9;
+        color: var(--primary-color);
+    }
+    .function-card p {
+        margin: 0;
+        font-size: 0.84rem;
+        color: #475569;
+        line-height: 1.45;
+    }
+
+    .docs-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .docs-badge-blue { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+    .docs-badge-green { background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+    .docs-badge-purple { background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; }
+    .docs-badge-red { background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5; }
+
+    .docs-events-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    .docs-event-card {
+        border-radius: 10px;
+        padding: 1.15rem;
+        border: 1px solid;
+    }
+    .docs-event-card--success {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+    .docs-event-card--info {
+        background: #f0f9ff;
+        border-color: #bae6fd;
+    }
+    .docs-event-title {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .docs-event-text {
+        margin: 0.25rem 0;
+        font-size: 0.83rem;
+        color: #334155;
+    }
+
+    .table-modern-docs {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        margin: 1rem 0;
+    }
+    .table-modern-docs th, .table-modern-docs td {
+        padding: 0.65rem 0.85rem;
+        border: 1px solid var(--border-color);
+        text-align: left;
+    }
+    .table-modern-docs th {
+        background: #f8fafc;
+        font-weight: 700;
+        color: #334155;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="docs-container">
+    <div class="docs-header-card">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-1">System Architecture &amp; Documentation</h1>
-            <p class="text-secondary small mb-0">Overview of KPRM2 Background Verification &amp; Case Management Platform (Go Version)</p>
+            <h1 class="page-title" style="margin:0; font-size:1.45rem; font-weight:800; color:#0f172a;">Platform Documentation</h1>
+            <p class="page-subtitle" style="margin:0.2rem 0 0; font-size:0.84rem; color:#64748b;">Complete reference for workflow, DEV &amp; RBAC roles, financial verification grid, APIs, live WhatsApp chat suite, formulas, and PDF reports.</p>
+        </div>
+        <div class="docs-quick-nav">
+            <a href="#section-arch" class="docs-quick-btn">Architecture</a>
+            <a href="#section-roles" class="docs-quick-btn">Roles &amp; DEV Access</a>
+            <a href="#section-financials" class="docs-quick-btn">Financials Grid &amp; Modal</a>
+            <a href="#section-api-engine" class="docs-quick-btn">Digital Verification API</a>
+            <a href="#section-diagnostics" class="docs-quick-btn">Live Diagnostics</a>
+            <a href="#section-functions" class="docs-quick-btn">Functions (30+)</a>
+            <a href="#section-comms" class="docs-quick-btn">WhatsApp Suite</a>
+            <a href="#section-reports" class="docs-quick-btn">Reports &amp; PDF Stamps</a>
+            <a href="#section-system" class="docs-quick-btn">Backups &amp; Crons</a>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-12 col-lg-8">
-            <div class="card border-0 shadow-sm bg-white p-4 mb-4">
-                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-cpu text-primary me-2"></i> High Performance Go Engine</h4>
-                <p class="text-secondary">
-                    This standalone Go implementation of KPRM2 provides native speed, memory efficiency, concurrent goroutine request handling, and strict type safety while preserving 100% interoperability with the existing MySQL database, uploaded assets, and frontend UI templates.
-                </p>
-                <div class="row g-3 mt-2">
-                    <div class="col-12 col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i> Two-Way Bcrypt Auth</h6>
-                            <p class="small text-muted mb-0">Transparently verifies PHP <code>$2y$</code> password hashes and produces compatible hashes for both systems.</p>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-file-earmark-excel text-success me-1"></i> Native Excel MIS Export</h6>
-                            <p class="small text-muted mb-0">Streams styled, dark-bordered Excel spreadsheets using Excelize with zero external runtime dependencies.</p>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-whatsapp text-success me-1"></i> WhatsApp Suite</h6>
-                            <p class="small text-muted mb-0">Direct GreenAPI integration with phone masking, multi-instance switching, QR scanner, and automated event triggers.</p>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <div class="p-3 bg-light rounded border">
-                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-table text-primary me-1"></i> Financial Matrix Engine</h6>
-                            <p class="small text-muted mb-0">10-parameter comparative audit with Indian currency notation (₹ 10,00,000) and automated variance calculation.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- 1. Core Architecture -->
+    <div class="docs-section" id="section-arch">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary-color);"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            1. Core Concepts &amp; Architecture
+        </h2>
+        <p>KPRM2 is an enterprise Case and Verification Management System designed for high-volume background checks and investigations.</p>
+        <ul>
+            <li><strong>Cases:</strong> The root entity representing a specific verification applicant or file ingestion.</li>
+            <li><strong>Tasks &amp; Case Tasks:</strong> Tasks are global verification templates (e.g. <em>Financial Statements</em>, <em>Banking</em>, <em>ITR / ITO</em>, <em>Address Check</em>). Case Tasks are the specific assignments bound to a Case.</li>
+            <li><strong>Dynamic Task Meta (Schema-free Fields):</strong> Task forms are generated dynamically using configurable metadata attributes without requiring physical table schema alterations.</li>
+            <li><strong>Client Dashboard Isolation:</strong> Selecting a client in the top navigation bar isolates metrics, progress breakdowns, and operational charts specifically to that client.</li>
+            <li><strong>Role-Based Access Control (RBAC):</strong> Granular field-level and operational permissions configured per user role (DEV, Admin, Manager, BEO, Verifier, Reviewer).</li>
+        </ul>
+    </div>
 
-            <div class="card border-0 shadow-sm bg-white p-4">
-                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-3 text-info me-2"></i> RESTful &amp; Inbound Webhook Endpoints</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm fs-13 mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Method</th>
-                                <th>Endpoint URL</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="badge bg-primary">GET</span></td>
-                                <td><code>/api/get_task_form.php</code></td>
-                                <td>Fetches dynamic field blueprint for task modal.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-primary">GET</span></td>
-                                <td><code>/api/get_task_remarks.php</code></td>
-                                <td>Fetches observation remarks with token substitution.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-success">POST</span></td>
-                                <td><code>/api_task_update.php</code></td>
-                                <td>Inbound webhook for external partner updates.</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-info text-dark">GET/POST</span></td>
-                                <td><code>/api/whatsapp_chat_api.php</code></td>
-                                <td>GreenAPI messaging, chat history, QR codes.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <!-- 2. User Roles -->
+    <div class="docs-section" id="section-roles">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            2. User Roles &amp; Lifecycle Workflow
+        </h2>
+        <table class="table-modern-docs">
+            <thead>
+                <tr>
+                    <th style="width:140px;">Role</th>
+                    <th>Operational Scope</th>
+                    <th style="width:240px;">Configuration Permissions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>DEV</strong></td>
+                    <td>Developer root access, telemetry logs, webhook debugging, system settings, database management.</td>
+                    <td><span class="docs-badge docs-badge-red">Root Developer</span> All System Tools, APIs &amp; DB.</td>
+                </tr>
+                <tr>
+                    <td><strong>Admin</strong></td>
+                    <td>Full access across all cases, task assignment, verification processing, reviews, and reporting.</td>
+                    <td><span class="docs-badge docs-badge-green">Full Control</span> Settings, API, Comms, Schemas.</td>
+                </tr>
+                <tr>
+                    <td><strong>Manager</strong></td>
+                    <td>Supervises all operational workflows, reviews tasks, and generates client reports.</td>
+                    <td><span class="docs-badge docs-badge-blue">Operational</span> Read-only settings.</td>
+                </tr>
+                <tr>
+                    <td><strong>BEO</strong></td>
+                    <td>Creates cases, assigns case tasks to Verifiers or WhatsApp groups, and reviews completed work.</td>
+                    <td>No settings access.</td>
+                </tr>
+                <tr>
+                    <td><strong>Verifier</strong></td>
+                    <td>Processes assigned tasks, inputs financial/field findings, uploads documents, and submits outcomes.</td>
+                    <td>Restricted to assigned tasks.</td>
+                </tr>
+                <tr>
+                    <td><strong>Reviewer</strong></td>
+                    <td>Cross-checks Verifier submissions, customizes dynamic remarks using <code>#tags#</code>, and finalizes status.</td>
+                    <td>Review queue access.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. Financial Statements & Observations Grid -->
+    <div class="docs-section" id="section-financials">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#059669;"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            3. Financial Statements Verification &amp; Case Stage Matrix
+        </h2>
+        <p>The platform includes a specialized <strong>Financial Statements &amp; Observations Grid System</strong> designed for auditing balance sheets, turnover, and tax filings.</p>
+        
+        <h3>10 Standard Comparative Financial Parameters</h3>
+        <p>The grid compares amounts between the <strong>Provided Copy</strong> and <strong>Concern Department Records</strong> across structured items:</p>
+        <ol>
+            <li><strong>Sales / Turnover</strong></li>
+            <li><strong>Purchase</strong></li>
+            <li><strong>Depreciation</strong></li>
+            <li><strong>Partner / Director Remuneration</strong></li>
+            <li><strong>Profit Before Tax (PBT)</strong></li>
+            <li><strong>Capital / Share Capital</strong></li>
+            <li><strong>Fixed Assets</strong></li>
+            <li><strong>Sundry Creditors</strong></li>
+            <li><strong>Sundry Debtors</strong></li>
+            <li><strong>Cash in Bank &amp; Balances</strong></li>
+        </ol>
+
+        <h3>Case Stage Modal Dynamic Formatting (<code>/cases</code>)</h3>
+        <p>The Case Stage popup displays financial tasks in a clean, high-clarity comparison matrix with section grouping (<em>P&amp;L Statement</em>, <em>Balance Sheet</em>), Indian number formatting (<code>₹ 10,00,000</code>), difference calculations, and color-coded status pills (<code>Matching</code>, <code>Diff</code>).</p>
+
+        <h3>Automatic Observation Text Generator</h3>
+        <p>When the verifier or admin marks each line as <em>Matching</em>, <em>Not Matching</em>, or <em>N.A.</em>, the system automatically compiles official formatted remarks:</p>
+        <pre>Given financial statements of [Applicant Name] for Financial Year [FY] with PAN [PAN] has been verified from the concern department and found below observations:
+1. Sales/Turnover amount Rs. [X] is Matching with the provided copy and the department records.
+2. Purchase amount Rs. [Y] is Not Matching with the provided copy and the department records.
+...</pre>
+
+        <h3>Financial Verification Functions &amp; Report Tables</h3>
+        <ul>
+            <li><code>financial_view_btn({case_task_id})</code>: Renders an interactive button with live discrepancy chips to preview the financial breakdown modal.</li>
+            <li><code>view_ft({case_task_id})</code>: Renders the clean, full-bordered comparative table in HTML / PDF reports.</li>
+            <li><code>financial_remarks({case_task_id})</code>: Generates the numbered observation narrative for official sign-off.</li>
+            <li><strong>Admin Direct Verification:</strong> Administrators can verify and update financial grids directly from <code>/process</code> and <code>/review</code>.</li>
+        </ul>
+    </div>
+
+    <!-- 4. Digital Verification Engine -->
+    <div class="docs-section" id="section-api-engine">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#7c3aed;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            4. Digital Verification Engine &amp; Remote APIs (<code>/settings?tab=external_api</code>)
+        </h2>
+        <p>The <strong>Digital Verification Engine</strong> manages automated background communication with external verification partner servers for <strong>Banking</strong> and <strong>ITR / ITO</strong> verification.</p>
+
+        <h3>Outbound Remote Endpoints</h3>
+        <ul>
+            <li><strong>Banking Endpoint (<code>update_banking</code>):</strong> Transmits <code>ref_id</code>, <code>ref_site</code>, <code>bank_name</code>, <code>account_no</code>, <code>txn_details</code>, and <code>requirement</code>.</li>
+            <li><strong>ITR Endpoint (<code>update_itr</code>):</strong> Transmits <code>ref_id</code>, <code>ref_site</code>, <code>name_of_document</code>, <code>pan</code>, <code>ay</code>, and <code>requirement</code>.</li>
+            <li><strong>Engine Master Switch &amp; Auto-Dispatch:</strong> Configure whether tasks automatically dispatch on creation or require manual triggering via the Case Tasks action button.</li>
+        </ul>
+
+        <h3>Inbound Webhook Receiver (<code>/api_task_update</code>)</h3>
+        <p>When the external partner completes verification, their server calls our webhook with the resolution:</p>
+        <ul>
+            <li>Payload: <code>ref_id</code> (Task ID), <code>status</code> (Positive/Negative/CNV), <code>remarks</code>, and optional <code>attachment_link</code>.</li>
+            <li><strong>Auto-Processing:</strong> Automatically marks task status as <strong>Verified</strong>, saves the verifier remarks, downloads any remote PDF/image attachment directly into local storage, and advances the task into the Review Queue.</li>
+        </ul>
+    </div>
+
+    <!-- 5. API Live Diagnostics -->
+    <div class="docs-section" id="section-diagnostics">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#f59e0b;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            5. API Live Diagnostic Tools (<code>/settings?tab=api_diagnostics</code>)
+        </h2>
+        <p>A dedicated diagnostic sandbox to test endpoint connectivity and simulate callbacks without touching live cases:</p>
+        <ul>
+            <li><strong>1. Outbound Payload Tester:</strong> Test cURL dispatch to remote banking or ITR servers with custom PAN, AY, Bank, or Account inputs. Live JSON payload and server responses display in the telemetry console.</li>
+            <li><strong>2. Inbound Webhook Simulator:</strong> Simulate partner callbacks for any Task ID with custom statuses and remarks to test workflow progression.</li>
+            <li><strong>Inbound Webhook Activity Log:</strong> Complete audit log of recent incoming callbacks with timestamps, client IP addresses, and HTTP status codes.</li>
+        </ul>
+    </div>
+
+    <!-- 6. Functions Reference -->
+    <div class="docs-section" id="section-functions">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary-color);"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            6. Custom Functions Reference (30+ Helper Formulas)
+        </h2>
+        <p>Used in <em>Manage Structures</em> (case ingestion forms) and <em>Manage Reports</em> (report configurations) to compute dynamic values on-the-fly.</p>
+
+        <div style="margin: 1rem 0;">
+            <input type="text" id="docsFunctionSearch" onkeyup="filterDocsFunctions()" class="form-control" placeholder="Search functions (e.g. tat, stamp, pick_up_date, financial_remarks, attachments)..." style="width: 100%; max-width: 400px; padding: 0.5rem 0.75rem; font-size: 0.85rem; border-radius: 6px;">
         </div>
 
-        <div class="col-12 col-lg-4">
-            <div class="card border-0 shadow-sm bg-white p-4">
-                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-badge text-warning me-2"></i> User Roles &amp; RBAC</h5>
-                <div class="list-group list-group-flush fs-13">
-                    <div class="list-group-item px-0 py-2">
-                        <strong>DEV:</strong> Full unrestricted root access.
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <strong>Admin:</strong> Operational &amp; configuration access.
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <strong>Manager:</strong> Case workflows &amp; reviews.
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <strong>BEO:</strong> Case ingestion &amp; assignments.
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <strong>Verifier:</strong> Field verification data entry only.
-                    </div>
-                    <div class="list-group-item px-0 py-2">
-                        <strong>Reviewer:</strong> Quality audit &amp; remarks finalization.
-                    </div>
-                </div>
+        <div class="function-grid">
+            <div class="function-card">
+                <code><span class="code-text">pick_up_date({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Date of Pick Up (case creation timestamp). Supports optional custom format like pick_up_date({case_id}, 'd-m-Y') (defaults to 'Y-m-d').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">reverted_date({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Date of Reverted (latest verification timestamp). Supports optional format like reverted_date({case_id}, 'd-m-Y') (defaults to 'Y-m-d').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">tat({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Turnaround Time (TAT) in days automatically computed between pick_up_date and reverted_date.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">current_date()</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Returns current server date. Supports optional custom format like current_date('d-m-Y') (defaults to 'Y-m-d').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">current_month()</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Returns current month and year (e.g. 'Oct 2026').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">format_date({Date}, {Format})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Formats any raw date into standard display format (e.g. 'd-M-Y').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">financial_view_btn({case_task_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Interactive button opening the financial statements comparative modal with discrepancy indicators.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">view_ft({case_task_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Renders the full P&amp;L and Balance Sheet comparative matrix table for reports/PDFs.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">financial_remarks({case_task_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Generates official financial observations narrative with applicant, FY, PAN, and numbered match/non-match items.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">task_count({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Total number of tasks assigned to the specific case.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">type_of_document({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Comma-separated list of assigned tasks and counts (e.g. ITR-2, Address-1).</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">fe_name({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Comma-separated list of Field Executives (Verifiers) assigned to the case.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">task_view({case_task_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Generates an interactive 'View Task' button opening modal details.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">task_remarks({case_task_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Formatted string of task final status and remark, translated with client keywords.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">case_status({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Summary of task counts per status (e.g. '2 Completed, 1 Pending (67% Completed)').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">case_stage({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Workflow progress stage ('Pending', 'In Progress', 'Completed').</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">case_view({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Generates an interactive 'View Case' popup modal button.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">overall_status({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Aggregates task remarks and computes final case status keyword.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">stamp([case_id], [width])</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Returns HTML image tag of the client agency stamp for official reports with automatic width.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">all_task_remarks({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>HTML table summary (Task Name | Status | Remarks) of all tasks for reports.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">combine_text({Text1}, {Text2})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Concatenates two or more strings together with a space.</p>
+            </div>
+            <div class="function-card">
+                <code><span class="code-text">client_name({case_id})</span><button type="button" class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button></code>
+                <p>Returns the client organization name associated with the case.</p>
             </div>
         </div>
+    </div>
+
+    <!-- 7. Communication Hub -->
+    <div class="docs-section" id="section-comms">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#2563eb;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            7. Communication Hub &amp; Green API Live WhatsApp Suite (<code>/whatsapp</code>)
+        </h2>
+        <p>Supports multi-account Email (SMTP) and WhatsApp (Green API) with task-type routing, automated events, and an embedded two-way chat messenger.</p>
+
+        <h3>In-App Live WhatsApp Chat &amp; Instance Manager</h3>
+        <ul>
+            <li><strong>Live 2-Way Messenger:</strong> Send and receive WhatsApp messages, attachments, documents, and notifications directly from the web app.</li>
+            <li><strong>Live QR Code Login &amp; Instance Switcher:</strong> Switch between WhatsApp accounts, check live connection status (<code>authorized</code>, <code>notAuthorized</code>), view real-time QR code for linking, and restart/logout instances.</li>
+            <li><strong>Privacy-Masked Numbers:</strong> Contacts and headers mask phone numbers (middle digits hidden as <code>XXXX</code>) and clean technical suffixes like <code>@c.us</code> and <code>@g.us</code>.</li>
+            <li><strong>Clickable URLs &amp; Document Previews:</strong> URLs in messages are automatically hyperlinked, and documents (PDF, DOCX, XLSX) can be viewed and downloaded directly from chat.</li>
+        </ul>
+
+        <div class="docs-events-grid">
+            <div class="docs-event-card docs-event-card--success">
+                <h4 class="docs-event-title"><span>💬</span> Event 1: On Task Assigned</h4>
+                <p class="docs-event-text"><strong>Channel:</strong> WhatsApp (Green API)</p>
+                <p class="docs-event-text"><strong>Recipient:</strong> Assigned Verifier or Group (<code>users.mobile</code>)</p>
+                <p class="docs-event-text"><strong>Sender:</strong> Task-Type assigned instance (e.g. ITR instance for ITR tasks).</p>
+                <p class="docs-event-text"><strong>Payload:</strong> Dispatches Task Name, Case ID, Client, and all assigned dynamic fields using <code>#Task_Fields#</code>.</p>
+            </div>
+
+            <div class="docs-event-card docs-event-card--info">
+                <h4 class="docs-event-title"><span>✉️</span> Event 2: On Case Reviewed</h4>
+                <p class="docs-event-text"><strong>Channel:</strong> Email (SMTP)</p>
+                <p class="docs-event-text"><strong>Recipient:</strong> Client Official Email (<code>clients.email</code>)</p>
+                <p class="docs-event-text"><strong>Condition:</strong> Triggered when client has <em>Email Reporting</em> enabled.</p>
+                <p class="docs-event-text"><strong>Payload:</strong> Dispatches full verification report summary, case details (<code>#Case_Fields#</code>), and task remarks.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Reports & Document Viewing -->
+    <div class="docs-section" id="section-reports">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#059669;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            8. Reports, MIS Exports &amp; PDF Agency Stamp Engine (<code>/reports</code>)
+        </h2>
+        <ul>
+            <li><strong>Agency Stamp &amp; Signature Engine:</strong> Generates official stamps with automatic direct embedding, preventing broken placeholders and cell clipping.</li>
+            <li><strong>Full-Bordered Layout:</strong> Financial statements, observation tables, and verification remarks render in clear, full-bordered tabular grids.</li>
+            <li><strong>Print &amp; PDF Margins:</strong> Dynamic <code>overflow: visible;</code> table cells and compact margins ensuring reports fit neatly on standard A4 pages.</li>
+            <li><strong>Zero-Download Document Viewer (<code>/file-viewer</code>):</strong> Direct in-browser viewing for PDFs, images, DOCX, XLSX, PPTX, and CSV files.</li>
+            <li><strong>Styled Excel MIS:</strong> Clean headers, borders, wrapped cells, and auto-adjusted column widths.</li>
+        </ul>
+    </div>
+
+    <!-- 9. Backups & System Maintenance -->
+    <div class="docs-section" id="section-system">
+        <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#475569;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            9. Database Backups, File Storage &amp; CLI Crons
+        </h2>
+        <ul>
+            <li><strong>SQL Backup Manager (<code>/settings?tab=backup</code>):</strong> One-click database dump generation, download, and file management.</li>
+            <li><strong>Asset Storage Gallery (<code>/settings?tab=files</code>):</strong> Storage usage breakdowns, instant search, and HD image lightboxes.</li>
+            <li><strong>System Settings (<code>/settings?tab=basic</code>):</strong> Platform branding, contact info, footer, and developer credits.</li>
+        </ul>
     </div>
 </div>
 
-{{ template "footer.html" . }}
+<script>
+function copyCode(btn) {
+    const codeText = btn.closest('code').querySelector('.code-text').innerText;
+    navigator.clipboard.writeText(codeText).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-lg text-success"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+        }, 1500);
+    });
+}
 
+function filterDocsFunctions() {
+    const q = (document.getElementById('docsFunctionSearch').value || '').toLowerCase();
+    const cards = document.querySelectorAll('.function-card');
+    cards.forEach(c => {
+        const text = c.innerText.toLowerCase();
+        c.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
+
+{{ template "footer.html" . }}

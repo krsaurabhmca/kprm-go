@@ -102,3 +102,15 @@
             <div>{{ .FlashError }}</div>
         </div>
         {{ end }}
+
+        {{ if .DBError }}
+        <div class="alert alert-danger" style="margin: 16px 24px 0; border-left: 5px solid #dc3545;" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-2 text-danger"></i>
+                <div>
+                    <strong>Database Connection Alert:</strong> {{ .DBError }}
+                    <div class="small mt-1 text-secondary">The application is running, but MySQL queries cannot execute until database credentials in <code>.env</code> are verified.</div>
+                </div>
+            </div>
+        </div>
+        {{ end }}

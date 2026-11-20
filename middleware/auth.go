@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -56,7 +57,7 @@ func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 	}
 }
 
-// BaseContextMiddleware populates common UI data for all pages (nav, clients, flash messages)
+// BaseContextMiddleware populates common UI data for all pages (nav, clients, flash messages, db health)
 func BaseContextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
@@ -72,10 +73,16 @@ func BaseContextMiddleware() gin.HandlerFunc {
 		}
 		_ = session.Save()
 
+		// Check database status
+		var dbErrorStr string
+		if dbErr := database.GetDBError(); dbErr != nil {
+			dbErrorStr = dbErr.Error()
+		}
+
 		// Get all clients for top bar switcher
 		db := database.GetDB()
 		var clients []map[string]interface{}
-		if db != nil {
+		if db != nil && dbErrorStr == "" {
 			rows, err := db.Query("SELECT id, name FROM clients ORDER BY name ASC")
 			if err == nil {
 				defer rows.Close()
@@ -88,12 +95,15 @@ func BaseContextMiddleware() gin.HandlerFunc {
 						"Name": cname,
 					})
 				}
+			} else {
+				dbErrorStr = fmt.Sprintf("Query error on clients: %v", err)
 			}
 		}
 
 		c.Set("flash_success", successMsg)
 		c.Set("flash_error", errorMsg)
 		c.Set("all_clients", clients)
+		c.Set("db_error", dbErrorStr)
 
 		c.Next()
 	}
@@ -110,6 +120,7 @@ func GetBaseTemplateData(c *gin.Context, pageTitle, currentPath string) gin.H {
 	flashSuccess, _ := c.Get("flash_success")
 	flashError, _ := c.Get("flash_error")
 	clients, _ := c.Get("all_clients")
+	dbError, _ := c.Get("db_error")
 
 	roleName, _ := c.Get("role_name")
 	username, _ := c.Get("username")
@@ -134,7 +145,7 @@ func GetBaseTemplateData(c *gin.Context, pageTitle, currentPath string) gin.H {
 		"AllClients":           clients,
 		"FlashSuccess":         flashSuccess,
 		"FlashError":           flashError,
+		"DBError":              dbError,
 		"IsVerifierOrReviewer": isVerifierOrReviewer,
 	}
 }
-

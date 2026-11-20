@@ -83,7 +83,10 @@
                         </td>
                         <td class="text-muted small">{{ .CreatedAt }}</td>
                         <td class="text-end pe-3">
-                            <a href="/reports/generate?template_id={{ .ID }}&type=html" target="_blank" class="btn btn-outline-primary btn-sm py-1 px-2" title="Preview Sample">
+                            <a href="/reports/config?id={{ .ID }}" class="btn btn-primary btn-sm py-1 px-2" title="Configure Cell Matrix">
+                                <i class="bi bi-sliders"></i> Config
+                            </a>
+                            <a href="/reports/generate?template_id={{ .ID }}&type=html" target="_blank" class="btn btn-outline-primary btn-sm py-1 px-2 ms-1" title="Preview Sample">
                                 <i class="bi bi-eye"></i> Preview
                             </a>
                             <a href="/reports/generate?template_id={{ .ID }}&type=excel" class="btn btn-outline-success btn-sm py-1 px-2 ms-1" title="Download Excel">

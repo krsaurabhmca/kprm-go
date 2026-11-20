@@ -37,6 +37,22 @@ type ClientViewItem struct {
 
 // ListClients displays clients directory
 func ListClients(c *gin.Context) {
+	// Support ?delete=ID directly matching clients.php
+	if delIDStr := c.Query("delete"); delIDStr != "" {
+		delID, _ := strconv.Atoi(delIDStr)
+		if delID > 0 {
+			session := sessions.Default(c)
+			db := database.GetDB()
+			if db != nil {
+				_, _ = db.Exec("DELETE FROM clients WHERE id = ?", delID)
+				session.Set("success", "Client deleted.")
+				_ = session.Save()
+			}
+			c.Redirect(http.StatusFound, "/clients")
+			return
+		}
+	}
+
 	data := middleware.GetBaseTemplateData(c, "Client Directory", "/clients")
 	db := database.GetDB()
 
@@ -116,9 +132,23 @@ func ListClients(c *gin.Context) {
 // SaveClient creates or updates a client
 func SaveClient(c *gin.Context) {
 	session := sessions.Default(c)
+	action := c.PostForm("action")
+
 	clientID, _ := strconv.Atoi(c.PostForm("client_id"))
+	if action == "add_client" {
+		clientID = 0
+	}
+
 	name := strings.TrimSpace(c.PostForm("name"))
+	if name == "" {
+		name = strings.TrimSpace(c.PostForm("client_name"))
+	}
+
 	email := strings.TrimSpace(c.PostForm("email"))
+	if email == "" {
+		email = strings.TrimSpace(c.PostForm("client_email"))
+	}
+
 	agencyName := strings.TrimSpace(c.PostForm("agency_name"))
 	kwPos := strings.TrimSpace(c.PostForm("keyword_positive"))
 	kwNeg := strings.TrimSpace(c.PostForm("keyword_negative"))
@@ -136,6 +166,9 @@ func SaveClient(c *gin.Context) {
 
 	var stampFilename string
 	file, err := c.FormFile("stamp_image")
+	if err != nil {
+		file, err = c.FormFile("agency_stamp")
+	}
 	if err == nil && file != nil {
 		uploadDir := filepath.Join(config.AppConfig.UploadPath, "stamps")
 		_ = os.MkdirAll(uploadDir, 0755)
@@ -144,46 +177,47 @@ func SaveClient(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	if clientID > 0 {
-		if stampFilename != "" {
-			_, err = db.Exec(`
-				UPDATE clients
-				SET name = ?, email = ?, agency_name = ?, agency_stamp = ?, email_reports_enabled = ?,
-				    keyword_positive = ?, keyword_negative = ?, keyword_cnv = ?,
-				    smtp_account_id = NULLIF(?, 0), whatsapp_account_id = NULLIF(?, 0)
-				WHERE id = ?
-			`, name, email, agencyName, stampFilename, emailReporting, kwPos, kwNeg, kwCNV, smtpID, waID, clientID)
-		} else {
-			_, err = db.Exec(`
-				UPDATE clients
-				SET name = ?, email = ?, agency_name = ?, email_reports_enabled = ?,
-				    keyword_positive = ?, keyword_negative = ?, keyword_cnv = ?,
-				    smtp_account_id = NULLIF(?, 0), whatsapp_account_id = NULLIF(?, 0)
-				WHERE id = ?
-			`, name, email, agencyName, emailReporting, kwPos, kwNeg, kwCNV, smtpID, waID, clientID)
-		}
+	if db != nil {
+		if clientID > 0 {
+			if stampFilename != "" {
+				_, err = db.Exec(`
+					UPDATE clients
+					SET name = ?, email = ?, agency_name = ?, agency_stamp = ?, email_reports_enabled = ?,
+					    keyword_positive = ?, keyword_negative = ?, keyword_cnv = ?,
+					    smtp_account_id = NULLIF(?, 0), whatsapp_account_id = NULLIF(?, 0)
+					WHERE id = ?
+				`, name, email, agencyName, stampFilename, emailReporting, kwPos, kwNeg, kwCNV, smtpID, waID, clientID)
+			} else {
+				_, err = db.Exec(`
+					UPDATE clients
+					SET name = ?, email = ?, agency_name = ?, email_reports_enabled = ?,
+					    keyword_positive = ?, keyword_negative = ?, keyword_cnv = ?,
+					    smtp_account_id = NULLIF(?, 0), whatsapp_account_id = NULLIF(?, 0)
+					WHERE id = ?
+				`, name, email, agencyName, emailReporting, kwPos, kwNeg, kwCNV, smtpID, waID, clientID)
+			}
 
-		if err != nil {
-			// Minimal fallback if columns differ
-			_, _ = db.Exec("UPDATE clients SET name = ? WHERE id = ?", name, clientID)
-			session.Set("success", "Client updated.")
+			if err != nil {
+				_, _ = db.Exec("UPDATE clients SET name = ? WHERE id = ?", name, clientID)
+				session.Set("success", "Client updated.")
+			} else {
+				session.Set("success", "Client updated successfully.")
+			}
 		} else {
-			session.Set("success", "Client updated successfully.")
+			_, err = db.Exec(`
+				INSERT INTO clients (name, email, agency_name, agency_stamp, email_reports_enabled, keyword_positive, keyword_negative, keyword_cnv, smtp_account_id, whatsapp_account_id, created_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), NULLIF(?, 0), NOW())
+			`, name, email, agencyName, stampFilename, emailReporting, kwPos, kwNeg, kwCNV, smtpID, waID)
+			if err != nil {
+				_, _ = db.Exec("INSERT INTO clients (name, created_at) VALUES (?, NOW())", name)
+				session.Set("success", "Client created.")
+			} else {
+				session.Set("success", "Client onboarded successfully.")
+			}
 		}
-	} else {
-		_, err = db.Exec(`
-			INSERT INTO clients (name, email, agency_name, agency_stamp, email_reports_enabled, keyword_positive, keyword_negative, keyword_cnv, smtp_account_id, whatsapp_account_id, created_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), NULLIF(?, 0), NOW())
-		`, name, email, agencyName, stampFilename, emailReporting, kwPos, kwNeg, kwCNV, smtpID, waID)
-		if err != nil {
-			_, _ = db.Exec("INSERT INTO clients (name, created_at) VALUES (?, NOW())", name)
-			session.Set("success", "Client created.")
-		} else {
-			session.Set("success", "Client onboarded successfully.")
-		}
+		_ = session.Save()
 	}
 
-	_ = session.Save()
 	c.Redirect(http.StatusFound, "/clients")
 }
 
@@ -210,15 +244,20 @@ func DeleteClient(c *gin.Context) {
 	if clientID == 0 {
 		clientID, _ = strconv.Atoi(c.Query("id"))
 	}
-
-	db := database.GetDB()
-	_, err := db.Exec("DELETE FROM clients WHERE id = ?", clientID)
-	if err != nil {
-		session.Set("error", "Error deleting client: "+err.Error())
-	} else {
-		session.Set("success", "Client deleted successfully.")
+	if clientID == 0 {
+		clientID, _ = strconv.Atoi(c.Query("delete"))
 	}
 
-	_ = session.Save()
+	db := database.GetDB()
+	if db != nil && clientID > 0 {
+		_, err := db.Exec("DELETE FROM clients WHERE id = ?", clientID)
+		if err != nil {
+			session.Set("error", "Error deleting client: "+err.Error())
+		} else {
+			session.Set("success", "Client deleted successfully.")
+		}
+		_ = session.Save()
+	}
+
 	c.Redirect(http.StatusFound, "/clients")
 }

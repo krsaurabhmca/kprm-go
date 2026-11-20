@@ -1,146 +1,527 @@
 {{ template "header.html" . }}
 
-<div class="content-body p-4 wizard-container dashboard-page-shell">
-    <!-- Top Focus Banner -->
-    <div class="client-focus-banner mb-4">
-        <div class="client-focus-copy">
-            <span class="section-kicker">Live Operations</span>
-            <h1 class="client-focus-title">
-                {{ if and .ActiveClientID (gt .ActiveClientID 0) }}Client Filter Active{{ else }}Operational Dashboard{{
-                end }}
-            </h1>
-            <p class="text-secondary small mb-0">Live background verification tracking &amp; operational metrics</p>
-        </div>
-        <div class="focus-pills">
-            <div class="focus-pill">
-                <span>Positive</span>
-                <strong class="text-success">{{ .KPI.PositiveCases }}</strong>
-            </div>
-            <div class="focus-pill">
-                <span>Negative</span>
-                <strong class="text-danger">{{ .KPI.NegativeCases }}</strong>
-            </div>
-            <div class="focus-pill">
-                <span>CNV</span>
-                <strong class="text-warning">{{ .KPI.CNVCases }}</strong>
-            </div>
-            <div class="focus-pill">
-                <span>Pending</span>
-                <strong class="text-secondary">{{ .KPI.PendingOutcomes }}</strong>
-            </div>
-        </div>
+<div class="wizard-container dashboard-page-shell">
+
+    <!-- Welcome Greeting Header -->
+    <div class="dashboard-welcome">
+        <h2>{{ .Greeting }}, {{ .DisplayUsername }}</h2>
+        <p>{{ .FormattedDate }}</p>
     </div>
 
-    <!-- Quick Action Buttons -->
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div class="d-flex gap-2">
-            <a href="/cases/new" class="btn btn-primary btn-sm px-3 shadow-sm">
-                <i class="bi bi-plus-lg me-1"></i> New Case Ingestion
-            </a>
-            <a href="/cases" class="btn btn-secondary btn-sm px-3">
-                <i class="bi bi-folder me-1"></i> Cases Directory
-            </a>
-            <a href="/tasks" class="btn btn-secondary btn-sm px-3">
-                <i class="bi bi-list-check me-1"></i> Task Assignments
-            </a>
-            <a href="/whatsapp" class="btn btn-success btn-sm px-3 shadow-sm">
-                <i class="bi bi-whatsapp me-1"></i> WhatsApp Suite
-            </a>
-        </div>
-    </div>
-
-    <!-- 4 Stats Cards using KPRM2 Custom UI Card System -->
-    <div class="stats-grid mb-4">
-        <div class="stat-card stat-card--primary">
-            <div class="stat-label">Total Ingested Cases</div>
-            <div class="stat-value">{{ .KPI.TotalCases }}</div>
-            <p class="muted-copy stat-description">Closed Cases: <strong>{{ .KPI.ClosedCases }}</strong></p>
-            <a href="/cases" class="btn btn-primary btn-sm stat-action mt-2">View Cases &rarr;</a>
+    {{ if eq .RoleName "Verifier" }}
+        <!-- 1. VERIFIER DEDICATED DASHBOARD -->
+        <div class="stats-grid">
+            <div class="stat-card stat-card--primary">
+                <div class="stat-label">Pending Tasks</div>
+                <div class="stat-value">{{ .VerifierData.PendingTasks }}</div>
+                <p class="muted-copy stat-description">Tasks waiting for your field verification</p>
+                <a href="/process" class="btn btn-primary btn-sm stat-action mt-2">Process Tasks &rarr;</a>
+            </div>
+            <div class="stat-card stat-card--success">
+                <div class="stat-label">Verified Tasks</div>
+                <div class="stat-value">{{ .VerifierData.VerifiedTasks }}</div>
+                <p class="muted-copy stat-description">Tasks you have successfully verified</p>
+            </div>
         </div>
 
-        <div class="stat-card stat-card--warning">
-            <div class="stat-label">Active Field Tasks</div>
-            <div class="stat-value">{{ .KPI.PendingTasks }}</div>
-            <p class="muted-copy stat-description">Currently assigned &amp; in-progress</p>
-            <a href="/process" class="btn btn-warning btn-sm stat-action mt-2 text-dark">Process Tasks &rarr;</a>
+    {{ else if eq .RoleName "Reviewer" }}
+        <!-- 2. REVIEWER DEDICATED DASHBOARD -->
+        <div class="stats-grid">
+            <div class="stat-card stat-card--primary">
+                <div class="stat-label">Tasks to Review</div>
+                <div class="stat-value">{{ .ReviewerData.TasksToReview }}</div>
+                <p class="muted-copy stat-description">Verified tasks awaiting quality sign-off</p>
+                <a href="/review" class="btn btn-primary btn-sm stat-action mt-2">Review Tasks &rarr;</a>
+            </div>
+            <div class="stat-card stat-card--success">
+                <div class="stat-label">Completed Tasks</div>
+                <div class="stat-value">{{ .ReviewerData.CompletedTasks }}</div>
+                <p class="muted-copy stat-description">Total fully completed tasks</p>
+            </div>
         </div>
 
-        <div class="stat-card stat-card--info">
-            <div class="stat-label">Review Queue Pending</div>
-            <div class="stat-value">{{ .KPI.ReviewQueue }}</div>
-            <p class="muted-copy stat-description">Awaiting supervisor quality decision</p>
-            <a href="/review" class="btn btn-primary btn-sm stat-action mt-2">Review Queue &rarr;</a>
+    {{ else }}
+        <!-- 3. ADMIN / MANAGER / BEO / DEV DASHBOARD -->
+
+        {{ if and .ActiveClientID (gt .ActiveClientID 0) }}
+        <!-- Client Workspace Focus Banner -->
+        <div class="client-focus-banner mb-3">
+            <div class="client-focus-copy">
+                <span class="eyebrow">Client Workspace</span>
+                <h3 class="section-title client-focus-title">
+                    {{ .ActiveClientName }}
+                </h3>
+                <p class="muted-copy">Operational activity and snapshots filtered by {{ .PeriodInfo.Label }} ({{ .PeriodInfo.Badge }}).</p>
+            </div>
+            <div class="focus-pills">
+                <div class="focus-pill">
+                    <span>Total Cases</span>
+                    <strong>{{ .GlobalSummary.TotalCases }}</strong>
+                </div>
+                <div class="focus-pill">
+                    <span>Total Tasks</span>
+                    <strong>{{ .GlobalSummary.TotalTasks }}</strong>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+
+        <!-- Timeframe / Period Filter Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem; background:var(--bg-surface); padding:0.75rem 1rem; border:1px solid var(--border-color); border-radius:12px; box-shadow:var(--shadow-xs);">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#eef2ff; color:#4f46e5; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-size:0.88rem; font-weight:800; color:#0f172a; line-height:1.2;">
+                        Analytics Filter: <span style="color:#4f46e5;">{{ .PeriodInfo.Label }}</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:0.1rem;">
+                        {{ .PeriodInfo.Badge }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Segmented Time Range Pills -->
+            <div style="display:flex; align-items:center; gap:0.35rem; background:#f1f5f9; padding:0.3rem 0.4rem; border-radius:8px; border:1px solid #e2e8f0; flex-wrap:wrap;">
+                <a href="/?period=today" style="{{ if eq .CurrentPeriod "today" }}background:#4f46e5; color:#ffffff; font-weight:700; box-shadow:0 2px 4px rgba(79,70,229,0.3);{{ else }}background:transparent; color:#475569; font-weight:600;{{ end }} padding:0.35rem 0.75rem; border-radius:6px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                    {{ if eq .CurrentPeriod "today" }}<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#a5b4fc;"></span>{{ end }}
+                    Today
+                </a>
+                <a href="/?period=week" style="{{ if eq .CurrentPeriod "week" }}background:#4f46e5; color:#ffffff; font-weight:700; box-shadow:0 2px 4px rgba(79,70,229,0.3);{{ else }}background:transparent; color:#475569; font-weight:600;{{ end }} padding:0.35rem 0.75rem; border-radius:6px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                    {{ if eq .CurrentPeriod "week" }}<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#a5b4fc;"></span>{{ end }}
+                    This Week
+                </a>
+                <a href="/?period=month" style="{{ if eq .CurrentPeriod "month" }}background:#4f46e5; color:#ffffff; font-weight:700; box-shadow:0 2px 4px rgba(79,70,229,0.3);{{ else }}background:transparent; color:#475569; font-weight:600;{{ end }} padding:0.35rem 0.75rem; border-radius:6px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                    {{ if eq .CurrentPeriod "month" }}<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#a5b4fc;"></span>{{ end }}
+                    This Month
+                </a>
+                <a href="/?period=year" style="{{ if eq .CurrentPeriod "year" }}background:#4f46e5; color:#ffffff; font-weight:700; box-shadow:0 2px 4px rgba(79,70,229,0.3);{{ else }}background:transparent; color:#475569; font-weight:600;{{ end }} padding:0.35rem 0.75rem; border-radius:6px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                    {{ if eq .CurrentPeriod "year" }}<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#a5b4fc;"></span>{{ end }}
+                    This Year
+                </a>
+                <a href="/?period=lifetime" style="{{ if eq .CurrentPeriod "lifetime" }}background:#4f46e5; color:#ffffff; font-weight:700; box-shadow:0 2px 4px rgba(79,70,229,0.3);{{ else }}background:transparent; color:#475569; font-weight:600;{{ end }} padding:0.35rem 0.75rem; border-radius:6px; font-size:0.78rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                    {{ if eq .CurrentPeriod "lifetime" }}<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#a5b4fc;"></span>{{ end }}
+                    Lifetime
+                </a>
+            </div>
         </div>
 
-        <div class="stat-card stat-card--success">
-            <div class="stat-label">Completed Tasks</div>
-            <div class="stat-value">{{ .KPI.CompletedTasks }}</div>
-            <p class="muted-copy stat-description">Verified &amp; outcome resolved</p>
-            <a href="/reports" class="btn btn-success btn-sm stat-action mt-2">Reports Center &rarr;</a>
+        <!-- Operations KPI Summary Cards -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+            <h4 class="dashboard-section-title" style="margin:0;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                {{ .PeriodInfo.Label }}'s Operations Summary
+                <span style="font-size:0.75rem; font-weight:600; color:#059669; background:#d1fae5; padding:0.15rem 0.5rem; border-radius:999px; margin-left:0.35rem;">
+                    ● {{ .PeriodInfo.Badge }}
+                </span>
+            </h4>
+            <div style="font-size:0.8rem; color:#64748b;">
+                Active Backlog: <strong style="color:#d97706;">{{ .PeriodKPI.PendingQueue }} tasks pending</strong>
+            </div>
         </div>
-    </div>
 
-    <!-- Recent Activity Table -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title"><i class="bi bi-clock-history me-2 text-primary"></i> Recent Operational Cases</h3>
-            <a href="/cases" class="btn btn-sm btn-secondary">View All Cases</a>
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 1.5rem;">
+            <div class="stat-card stat-card--primary" style="padding:0.9rem 1rem;">
+                <div class="stat-label">{{ .PeriodInfo.Short }} Cases</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ .PeriodKPI.Cases }}</div>
+                <p class="muted-copy stat-description" style="font-size:0.75rem;">Registered in this period</p>
+            </div>
+            <div class="stat-card stat-card--info" style="padding:0.9rem 1rem;">
+                <div class="stat-label">{{ .PeriodInfo.Short }} Tasks Created</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ .PeriodKPI.TasksCreated }}</div>
+                <p class="muted-copy stat-description" style="font-size:0.75rem;">Queued in this period</p>
+            </div>
+            <div class="stat-card stat-card--warning" style="padding:0.9rem 1rem;">
+                <div class="stat-label">{{ .PeriodInfo.Short }} Verified</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ .PeriodKPI.TasksVerified }}</div>
+                <p class="muted-copy stat-description" style="font-size:0.75rem;">Verified by team</p>
+            </div>
+            <div class="stat-card stat-card--success" style="padding:0.9rem 1rem;">
+                <div class="stat-label">{{ .PeriodInfo.Short }} Completed</div>
+                <div class="stat-value" style="font-size:1.6rem;">{{ .PeriodKPI.TasksCompleted }}</div>
+                <p class="muted-copy stat-description" style="font-size:0.75rem;">Finalized &amp; reviewed</p>
+            </div>
+            <div class="stat-card stat-card--success" style="padding:0.9rem 1rem; border-left: 4px solid #10b981;">
+                <div class="stat-label">{{ .PeriodInfo.Short }} Positive</div>
+                <div class="stat-value" style="font-size:1.6rem; color:#059669;">{{ .PeriodKPI.Positive }}</div>
+                <p class="muted-copy stat-description" style="font-size:0.75rem;">Positive outcomes</p>
+            </div>
+            <div class="stat-card stat-card--danger" style="padding:0.9rem 1rem; border-left: 4px solid #ef4444;">
+                <div class="stat-label">{{ .PeriodInfo.Short }} Negative</div>
+                <div class="stat-value" style="font-size:1.6rem; color:#dc2626;">{{ .PeriodKPI.Negative }}</div>
+                <p class="muted-copy stat-description" style="font-size:0.75rem;">Discrepancies flagged</p>
+            </div>
         </div>
-        <div class="table-responsive">
-            <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                <thead>
-                    <tr>
-                        <th class="ps-3" style="width: 70px;">Case #</th>
-                        <th>Client</th>
-                        <th>Structure</th>
-                        <th>Applicant Particulars</th>
-                        <th class="text-center">Tasks</th>
-                        <th class="text-center">Case Stage</th>
-                        <th class="text-center">TAT</th>
-                        <th class="text-end pe-3">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{ range .RecentCases }}
-                    <tr>
-                        <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
-                        <td class="fw-semibold text-dark">{{ .ClientName }}</td>
-                        <td class="text-muted">{{ .StructureName }}</td>
-                        <td class="fw-semibold">{{ .ApplicantName }}</td>
-                        <td class="text-center">
-                            <span class="badge badge-secondary">{{ .TaskCount }} tasks</span>
-                        </td>
-                        <td class="text-center">
-                            {{ if eq .OverallStatus "Positive" }}
-                            <span class="badge badge-success"><i class="bi bi-check-circle me-1"></i>Positive</span>
-                            {{ else if eq .OverallStatus "Negative" }}
-                            <span class="badge badge-danger"><i class="bi bi-x-circle me-1"></i>Negative</span>
-                            {{ else if eq .OverallStatus "CNV" }}
-                            <span class="badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>CNV</span>
-                            {{ else }}
-                            <span class="badge badge-secondary">Pending</span>
-                            {{ end }}
-                        </td>
-                        <td class="text-center font-monospace text-muted">{{ .TAT }}</td>
-                        <td class="text-end pe-3">
-                            <button type="button" class="btn btn-sm btn-secondary me-1"
-                                onclick="openCaseStageModal({{ .ID }})" title="View Lifecycle & Tasks">
-                                <i class="bi bi-eye"></i> Stage
-                            </button>
-                            <a href="/cases/view?id={{ .ID }}" class="btn btn-sm btn-primary" title="Full Details">
-                                <i class="bi bi-box-arrow-up-right"></i>
-                            </a>
-                        </td>
-                    </tr>
+
+        {{ if and .ActiveClientID (gt .ActiveClientID 0) }}
+        <!-- Structure-Wise Breakdown for Active Client -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Structure-Wise Activity ({{ .ActiveClientName }})
+                </h3>
+                <span class="badge badge-primary">{{ len .StructureStats }} Form(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" style="width:100%; border-collapse:collapse; font-size:0.84rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:0.6rem 0.8rem; text-align:left;">Structure / Sheet Name</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Period Cases</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Total Cases</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Period Tasks</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Verified</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Completed</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Backlog</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .StructureStats }}
+                        <tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:0.6rem 0.8rem; font-weight:700;">{{ .SheetName }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; font-weight:700; color:#4f46e5;">{{ .PeriodCases }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;">{{ .TotalCases }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;">{{ .PeriodTasksCreated }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#d97706;">{{ .PeriodTasksVerified }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#059669; font-weight:700;">{{ .PeriodTasksCompleted }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;"><span class="badge {{ if gt .PendingQueue 0 }}badge-warning{{ else }}badge-secondary{{ end }}">{{ .PendingQueue }}</span></td>
+                            <td style="padding:0.6rem 0.8rem; text-align:right;">
+                                <a href="/cases/new?structure_id={{ .StructureID }}" class="btn btn-primary btn-xs py-1 px-2" style="font-size:0.75rem;">+ New Case</a>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted fst-italic">No structures configured for this client.</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{ else }}
+        <!-- Global Mode: Client-Wise Portfolio Activity Summary across all clients -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Client-Wise Portfolio Activity ({{ .PeriodInfo.Label }})
+                </h3>
+                <span class="badge badge-primary">{{ len .ClientStats }} Client Organization(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" style="width:100%; border-collapse:collapse; font-size:0.84rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:0.6rem 0.8rem; text-align:left;">Client Organization</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Structures</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Period Cases</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Total Cases</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Period Tasks</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Verified</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Completed</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Backlog</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .ClientStats }}
+                        <tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:0.6rem 0.8rem;">
+                                <strong>{{ .ClientName }}</strong>
+                            </td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;"><span class="badge badge-secondary">{{ .TotalStructures }}</span></td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; font-weight:700; color:#4f46e5;">{{ .PeriodCases }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;">{{ .TotalCases }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;">{{ .PeriodTasksCreated }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#d97706;">{{ .PeriodTasksVerified }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#059669; font-weight:700;">{{ .PeriodTasksCompleted }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;"><span class="badge {{ if gt .PendingQueue 0 }}badge-warning{{ else }}badge-secondary{{ end }}">{{ .PendingQueue }}</span></td>
+                            <td style="padding:0.6rem 0.8rem; text-align:right;">
+                                <a href="/clients/focus?id={{ .ClientID }}" class="btn btn-secondary btn-xs py-1 px-2" style="font-size:0.75rem;">Focus Client &rarr;</a>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted fst-italic">No active client organizations found.</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {{ end }}
+
+        <!-- Task-Wise Activity & Statistics Section -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h3 class="card-title d-flex align-items-center gap-2 mb-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        Task-Wise Activity &amp; Statistics ({{ .PeriodInfo.Label }})
+                    </h3>
+                    <p class="muted-copy mb-0" style="font-size:0.8rem;">Breakdown of tasks created, verified, and completed for {{ .PeriodInfo.Label }}.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <input type="text" id="taskSearchInput" placeholder="Filter tasks..." onkeyup="filterTaskTable()" style="padding:0.3rem 0.65rem; font-size:0.8rem; border:1px solid #cbd5e1; border-radius:6px; width:140px;">
+                    {{ if .ShowAllTasks }}
+                        <a href="/?period={{ .CurrentPeriod }}&show_all_tasks=0" class="btn btn-secondary btn-xs" style="padding:0.3rem 0.55rem; font-size:0.75rem; text-decoration:none;">Show Active Only</a>
                     {{ else }}
-                    <tr>
-                        <td colspan="8" class="text-center py-4 text-muted fst-italic">No cases available.</td>
-                    </tr>
+                        <a href="/?period={{ .CurrentPeriod }}&show_all_tasks=1" class="btn btn-secondary btn-xs" style="padding:0.3rem 0.55rem; font-size:0.75rem; text-decoration:none;">Show All ({{ .TotalTaskDefinitions }})</a>
                     {{ end }}
-                </tbody>
-            </table>
+                    <span class="badge badge-primary" style="font-size:0.75rem;">{{ len .TaskStats }} {{ if .ShowAllTasks }}Tasks{{ else }}Active{{ end }}</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="taskActivityTable" style="width:100%; border-collapse:collapse; font-size:0.84rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:0.6rem 0.8rem; text-align:left;">Task Blueprint</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Type</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Period Created</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Verified</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Completed</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center; color:#059669;">Positive</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center; color:#dc2626;">Negative</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Backlog Queue</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .TaskStats }}
+                        <tr class="task-row-item" style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:0.6rem 0.8rem;">
+                                <strong>{{ .TaskName }}</strong>
+                            </td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;">
+                                <span class="badge {{ if eq .TaskType "PHYSICAL" }}badge-success{{ else if eq .TaskType "ITO" }}badge-primary{{ else }}badge-warning{{ end }}">{{ .TaskType }}</span>
+                            </td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; font-weight:700; color:#4f46e5;">{{ .PeriodCreated }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#d97706; font-weight:600;">{{ .PeriodVerified }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#059669; font-weight:700;">{{ .PeriodCompleted }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#059669;">{{ .PeriodPositive }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center; color:#dc2626;">{{ .PeriodNegative }}</td>
+                            <td style="padding:0.6rem 0.8rem; text-align:center;">
+                                <span class="badge {{ if gt .PendingCount 0 }}badge-warning{{ else }}badge-secondary{{ end }}">{{ .PendingCount }}</span>
+                            </td>
+                            <td style="padding:0.6rem 0.8rem; text-align:right;">
+                                <a href="/tasks/meta?task_id={{ .TaskID }}" class="btn btn-outline-secondary btn-xs py-1 px-2" style="font-size:0.75rem;" title="Configure Fields & Remarks">
+                                    <i class="bi bi-gear"></i> Config
+                                </a>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted fst-italic">No task activity in this period.</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Global All-Time Summary Counters -->
+        <h4 class="dashboard-section-title" style="margin-top: 1.75rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            System All-Time Overview
+        </h4>
+        <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card stat-card--info">
+                <div class="stat-label">{{ if and .ActiveClientID (gt .ActiveClientID 0) }}Structures{{ else }}Total Clients{{ end }}</div>
+                <div class="stat-value">{{ if and .ActiveClientID (gt .ActiveClientID 0) }}{{ .GlobalSummary.TotalStructures }}{{ else }}{{ .GlobalSummary.TotalClients }}{{ end }}</div>
+                <p class="muted-copy stat-description">{{ if and .ActiveClientID (gt .ActiveClientID 0) }}Mapped workflows{{ else }}Onboarded organizations{{ end }}</p>
+            </div>
+            <div class="stat-card stat-card--primary">
+                <div class="stat-label">Total Cases</div>
+                <div class="stat-value">{{ .GlobalSummary.TotalCases }}</div>
+                <p class="muted-copy stat-description">Ingested case entries</p>
+            </div>
+            <div class="stat-card stat-card--warning">
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-value">{{ .GlobalSummary.TotalTasks }}</div>
+                <p class="muted-copy stat-description">Lifetime generated tasks</p>
+            </div>
+            <div class="stat-card stat-card--danger">
+                <div class="stat-label">Pending Backlog</div>
+                <div class="stat-value" style="color:#dc2626;">{{ .GlobalSummary.TotalPending }}</div>
+                <p class="muted-copy stat-description">Active verification queue</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions Grid -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="dashboard-section-title mb-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Quick Actions
+                </h3>
+            </div>
+            <div class="card-body p-3">
+                <div class="quick-actions-grid d-flex flex-wrap gap-2">
+                    <a href="/cases/new" class="btn btn-primary btn-sm px-3 shadow-sm">
+                        <i class="bi bi-plus-lg me-1"></i> New Case
+                    </a>
+                    <a href="/cases" class="btn btn-secondary btn-sm px-3">
+                        <i class="bi bi-folder me-1"></i> Manage Cases
+                    </a>
+                    <a href="/clients" class="btn btn-secondary btn-sm px-3">
+                        <i class="bi bi-building me-1"></i> Manage Clients
+                    </a>
+                    <a href="/tasks/blueprints" class="btn btn-secondary btn-sm px-3">
+                        <i class="bi bi-gear me-1"></i> Task Blueprints
+                    </a>
+                    <a href="/reports" class="btn btn-secondary btn-sm px-3">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Reports Center
+                    </a>
+                    <a href="/process" class="btn btn-warning btn-sm px-3 text-dark">
+                        <i class="bi bi-check2-circle me-1"></i> Verification Queue
+                    </a>
+                    <a href="/review" class="btn btn-primary btn-sm px-3">
+                        <i class="bi bi-journal-check me-1"></i> Review Queue
+                    </a>
+                    <a href="/whatsapp" class="btn btn-success btn-sm px-3 shadow-sm">
+                        <i class="bi bi-whatsapp me-1"></i> Live Chat
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Operational Cases -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2 text-primary"></i> Recent Ingested Cases
+                </h3>
+                <a href="/cases" class="btn btn-sm btn-secondary">View All Cases &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table styled-table table-hover align-middle mb-0 fs-13">
+                    <thead>
+                        <tr>
+                            <th class="ps-3" style="width: 75px;">Case #</th>
+                            <th>Client</th>
+                            <th>Structure Form</th>
+                            <th>Applicant Name</th>
+                            <th class="text-center">Tasks</th>
+                            <th class="text-center">Status</th>
+                            <th>Created</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .RecentCases }}
+                        <tr>
+                            <td class="ps-3 fw-bold font-monospace text-primary">#{{ .ID }}</td>
+                            <td>{{ .ClientName }}</td>
+                            <td><span class="badge badge-secondary">{{ .StructureName }}</span></td>
+                            <td class="fw-bold text-dark">{{ .ApplicantName }}</td>
+                            <td class="text-center"><span class="badge badge-primary font-monospace">{{ .TaskCount }}</span></td>
+                            <td class="text-center">
+                                <span class="badge {{ if eq .OverallStatus "Positive" }}badge-success{{ else if eq .OverallStatus "Negative" }}badge-danger{{ else }}badge-warning{{ end }}">{{ .OverallStatus }}</span>
+                            </td>
+                            <td class="text-muted font-monospace fs-12">{{ .CreatedAt }}</td>
+                            <td class="text-end pe-3">
+                                <a href="/cases/{{ .ID }}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11px;">View</a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 ms-1" style="font-size: 11px;" onclick="openCaseStageModal({{ .ID }})">Stage</button>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted fst-italic">No cases found in this context.</td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {{ end }}
+
+</div>
+
+<!-- Stage Modal Container -->
+<div class="modal fade" id="caseStageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fs-15 fw-bold" id="caseStageModalTitle">Case Lifecycle Stage</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="caseStageModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="text-muted mt-2">Loading case stage details...</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+function filterTaskTable() {
+    const input = document.getElementById('taskSearchInput');
+    const filter = input ? input.value.toLowerCase().trim() : '';
+    const rows = document.querySelectorAll('.task-row-item');
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+}
+
+function openCaseStageModal(caseId) {
+    const modalEl = document.getElementById('caseStageModal');
+    if (!modalEl) return;
+    const bsModal = new bootstrap.Modal(modalEl);
+    const body = document.getElementById('caseStageModalBody');
+    const title = document.getElementById('caseStageModalTitle');
+    title.innerText = 'Case #' + caseId + ' Lifecycle Stage';
+    body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="text-muted mt-2">Loading case stage details...</div></div>';
+    bsModal.show();
+
+    fetch('/api/case_stage/' + caseId)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.html) {
+                body.innerHTML = data.html;
+            } else {
+                body.innerHTML = '<div class="alert alert-danger">Failed to load stage data: ' + (data.message || 'Unknown error') + '</div>';
+            }
+        })
+        .catch(err => {
+            body.innerHTML = '<div class="alert alert-danger">Error fetching stage details: ' + err.message + '</div>';
+        });
+}
+</script>
 
 {{ template "footer.html" . }}

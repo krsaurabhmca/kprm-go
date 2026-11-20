@@ -29,6 +29,27 @@ type UserViewItem struct {
 
 // ListUsers displays user management directory
 func ListUsers(c *gin.Context) {
+	// Support query ?delete=123 directly matching users.php
+	if delIDStr := c.Query("delete"); delIDStr != "" {
+		delID, _ := strconv.Atoi(delIDStr)
+		if delID > 0 {
+			session := sessions.Default(c)
+			currentUserID, _ := c.Get("user_id")
+			if currID, ok := currentUserID.(int); ok && currID == delID {
+				session.Set("error", "You cannot delete your own account.")
+			} else {
+				db := database.GetDB()
+				if db != nil {
+					_, _ = db.Exec("DELETE FROM users WHERE id = ?", delID)
+					session.Set("success", "User deleted successfully.")
+				}
+			}
+			_ = session.Save()
+			c.Redirect(http.StatusFound, "/users")
+			return
+		}
+	}
+
 	data := middleware.GetBaseTemplateData(c, "User Management & RBAC", "/users")
 	db := database.GetDB()
 
@@ -108,13 +129,46 @@ func ListUsers(c *gin.Context) {
 // SaveUser creates or updates a user
 func SaveUser(c *gin.Context) {
 	session := sessions.Default(c)
+	action := c.PostForm("action")
+
+	// Support impersonation if submitted as action=login_as
+	if action == "login_as" {
+		ImpersonateUser(c)
+		return
+	}
+
+	// Support delete if submitted as action=delete_user
+	if action == "delete_user" {
+		DeleteUser(c)
+		return
+	}
+
 	userID, _ := strconv.Atoi(c.PostForm("user_id"))
+	if action == "add_user" {
+		userID = 0
+	}
+
 	username := strings.TrimSpace(c.PostForm("username"))
 	password := c.PostForm("password")
 	roleID, _ := strconv.Atoi(c.PostForm("role_id"))
 	email := strings.TrimSpace(c.PostForm("email"))
 	mobile := strings.TrimSpace(c.PostForm("mobile"))
-	allowedTypes := strings.TrimSpace(c.PostForm("allowed_task_types"))
+
+	// Collect allowed task types from checkboxes or input
+	typesArray := c.PostFormArray("allowed_task_types")
+	var allowedTypes string
+	if len(typesArray) > 0 {
+		var validTypes []string
+		for _, t := range typesArray {
+			t = strings.ToUpper(strings.TrimSpace(t))
+			if t == "PHYSICAL" || t == "ITO" || t == "BANKING" {
+				validTypes = append(validTypes, t)
+			}
+		}
+		allowedTypes = strings.Join(validTypes, ",")
+	} else {
+		allowedTypes = strings.TrimSpace(c.PostForm("allowed_task_types"))
+	}
 
 	if username == "" || roleID == 0 {
 		session.Set("error", "Username and role are required.")
@@ -124,23 +178,41 @@ func SaveUser(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		c.Redirect(http.StatusFound, "/users")
+		return
+	}
+
 	if userID > 0 {
+		// Update existing user
 		if password != "" {
 			hash, _ := utils.HashPassword(password)
-			_, _ = db.Exec("UPDATE users SET username = ?, password_hash = ?, role_id = ?, email = ?, mobile = ?, allowed_task_types = ? WHERE id = ?", username, hash, roleID, email, mobile, allowedTypes, userID)
+			_, _ = db.Exec("UPDATE users SET username = ?, password_hash = ?, role_id = ?, email = ?, mobile = ?, allowed_task_types = NULLIF(?, '') WHERE id = ?", username, hash, roleID, email, mobile, allowedTypes, userID)
 		} else {
-			_, _ = db.Exec("UPDATE users SET username = ?, role_id = ?, email = ?, mobile = ?, allowed_task_types = ? WHERE id = ?", username, roleID, email, mobile, allowedTypes, userID)
+			_, _ = db.Exec("UPDATE users SET username = ?, role_id = ?, email = ?, mobile = ?, allowed_task_types = NULLIF(?, '') WHERE id = ?", username, roleID, email, mobile, allowedTypes, userID)
 		}
 		session.Set("success", "User updated successfully.")
 	} else {
+		// Create new user
 		if password == "" {
 			session.Set("error", "Password is required for new user.")
 			_ = session.Save()
 			c.Redirect(http.StatusFound, "/users")
 			return
 		}
+
+		// Check username existence
+		var existingID int
+		err := db.QueryRow("SELECT id FROM users WHERE username = ?", username).Scan(&existingID)
+		if err == nil && existingID > 0 {
+			session.Set("error", "Username already exists.")
+			_ = session.Save()
+			c.Redirect(http.StatusFound, "/users")
+			return
+		}
+
 		hash, _ := utils.HashPassword(password)
-		_, err := db.Exec("INSERT INTO users (username, password_hash, role_id, email, mobile, allowed_task_types, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())", username, hash, roleID, email, mobile, allowedTypes)
+		_, err = db.Exec("INSERT INTO users (username, password_hash, role_id, email, mobile, allowed_task_types, created_at) VALUES (?, ?, ?, ?, ?, NULLIF(?, ''), NOW())", username, hash, roleID, email, mobile, allowedTypes)
 		if err != nil {
 			session.Set("error", "Error creating user: "+err.Error())
 		} else {
@@ -156,6 +228,9 @@ func SaveUser(c *gin.Context) {
 func ImpersonateUser(c *gin.Context) {
 	session := sessions.Default(c)
 	targetID, _ := strconv.Atoi(c.PostForm("user_id"))
+	if targetID == 0 {
+		targetID, _ = strconv.Atoi(c.PostForm("target_id"))
+	}
 	currentUserID, _ := c.Get("user_id")
 
 	if targetID == 0 {
@@ -178,7 +253,8 @@ func ImpersonateUser(c *gin.Context) {
 		if target.AllowedTaskTypes.Valid {
 			session.Set("allowed_task_types", target.AllowedTaskTypes.String)
 		}
-		session.Set("success", fmt.Sprintf("Logged in as '%s' (%s). Use top bar to return.", target.Username, target.RoleName))
+		session.Delete("active_client_id")
+		session.Set("success", fmt.Sprintf("You are now logged in as %s (%s). Use top bar to return.", target.Username, target.RoleName))
 		_ = session.Save()
 		c.Redirect(http.StatusFound, "/")
 		return
@@ -196,6 +272,9 @@ func DeleteUser(c *gin.Context) {
 	if userID == 0 {
 		userID, _ = strconv.Atoi(c.PostForm("user_id"))
 	}
+	if userID == 0 {
+		userID, _ = strconv.Atoi(c.Query("delete"))
+	}
 
 	if userID == 1 {
 		session.Set("error", "Cannot delete master administrator.")
@@ -204,12 +283,22 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	currentUserID, _ := c.Get("user_id")
+	if currID, ok := currentUserID.(int); ok && currID == userID {
+		session.Set("error", "You cannot delete your own account.")
+		_ = session.Save()
+		c.Redirect(http.StatusFound, "/users")
+		return
+	}
+
 	db := database.GetDB()
-	_, err := db.Exec("DELETE FROM users WHERE id = ?", userID)
-	if err != nil {
-		session.Set("error", "Error deleting user: "+err.Error())
-	} else {
-		session.Set("success", "User deleted successfully.")
+	if db != nil {
+		_, err := db.Exec("DELETE FROM users WHERE id = ?", userID)
+		if err != nil {
+			session.Set("error", "Error deleting user: "+err.Error())
+		} else {
+			session.Set("success", "User deleted successfully.")
+		}
 	}
 	_ = session.Save()
 	c.Redirect(http.StatusFound, "/users")

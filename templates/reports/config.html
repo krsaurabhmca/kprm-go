@@ -1,0 +1,455 @@
+{{ template "header.html" . }}
+
+<style>
+    .report-config-page {
+        max-width: 98%;
+        margin: 0rem auto 0rem;
+    }
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .report-sheet-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.85rem;
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    .report-grid-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+    }
+    .report-grid-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 1.5rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .matrix-container {
+        max-height: 65vh;
+        overflow: auto;
+        position: relative;
+    }
+    .matrix-table {
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        width: 100%;
+        user-select: none;
+    }
+    .matrix-table th {
+        background: #f1f5f9;
+        color: #475569;
+        font-weight: 700;
+        text-align: center;
+        padding: 6px 10px;
+        border: 1px solid #cbd5e1;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    .matrix-table th.corner-cell {
+        left: 0;
+        z-index: 3;
+    }
+    .matrix-table td.row-header {
+        background: #f1f5f9;
+        color: #475569;
+        font-weight: 700;
+        text-align: center;
+        padding: 6px 10px;
+        border: 1px solid #cbd5e1;
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        width: 45px;
+    }
+    .matrix-table td.grid-cell {
+        border: 1px solid #e2e8f0;
+        padding: 6px 8px;
+        min-width: 110px;
+        height: 34px;
+        background: #ffffff;
+        cursor: pointer;
+        position: relative;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: background-color 0.1s, border-color 0.1s;
+    }
+    .matrix-table td.grid-cell:hover {
+        background-color: #f8fafc;
+        border-color: #94a3b8;
+    }
+    .matrix-table td.grid-cell.selected {
+        outline: 2px solid #4f46e5 !important;
+        background-color: #eef2ff !important;
+        z-index: 1;
+    }
+    .matrix-table td.grid-cell.has-mapping {
+        border-left: 3px solid #10b981;
+    }
+    .cell-type-badge {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 1px 4px;
+        border-radius: 3px;
+        margin-right: 4px;
+    }
+    .badge-field { background: #dbeafe; color: #1e40af; }
+    .badge-formula { background: #fef3c7; color: #92400e; }
+    .badge-static { background: #f3f4f6; color: #374151; }
+</style>
+
+<div class="report-config-page">
+    <div class="report-header">
+        <div>
+            <h1 class="h4 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-spreadsheet text-primary"></i> {{ .Template.Name }}
+            </h1>
+            <div class="text-secondary small d-flex align-items-center gap-2">
+                <span>Client: <strong>{{ .Template.ClientName }}</strong></span>
+                <span class="text-muted">•</span>
+                <span class="report-sheet-badge">{{ .Template.SheetName }}</span>
+                <span class="text-muted">•</span>
+                <span>Bounds: <strong>A1 to {{ .Template.MaxCol }}{{ .Template.MaxRow }}</strong></span>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/reports" class="btn btn-secondary btn-sm px-3">
+                <i class="bi bi-arrow-left me-1"></i> Back to Reports
+            </a>
+            <button type="submit" form="finishForm" class="btn btn-primary btn-sm px-4 shadow-sm fw-semibold" onclick="return finalizeGrid()">
+                <i class="bi bi-check2-circle me-1"></i> Save Report Config
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden POST Form -->
+    <form action="/reports/config" method="POST" id="finishForm">
+        <input type="hidden" name="report_id" value="{{ .Template.ID }}">
+        <input type="hidden" name="mappings" id="hiddenMappings" value="{{ .MappingsJSON }}">
+        <input type="hidden" name="layout_config" id="hiddenLayoutConfig" value="{{ .LayoutConfigJSON }}">
+    </form>
+
+    <div class="row g-3">
+        <!-- Matrix Grid Canvas -->
+        <div class="col-12 col-xl-8">
+            <div class="report-grid-card">
+                <div class="report-grid-toolbar">
+                    <div class="d-flex align-items-center gap-2 fw-semibold fs-13">
+                        <i class="bi bi-grid-3x3 text-primary"></i> Cell Matrix Designer
+                        <span class="text-muted ms-2 fs-12">(Click any cell to inspect or configure mapping)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge badge-secondary fs-11" id="selectedCellDisplay">Cell: None Selected</span>
+                    </div>
+                </div>
+
+                <div class="matrix-container" id="matrixContainer">
+                    <table class="matrix-table" id="matrixTable">
+                        <thead id="matrixHeader"></thead>
+                        <tbody id="matrixBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cell Inspector & Mapping Panel -->
+        <div class="col-12 col-xl-4">
+            <div class="card p-3 shadow-sm border-0" id="cellInspectorCard">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 class="fs-14 fw-bold text-dark mb-0">
+                        <i class="bi bi-sliders2 text-primary me-1"></i> Cell Inspector
+                    </h5>
+                    <span class="badge badge-primary fs-12 font-monospace" id="inspectorCellAddress">-</span>
+                </div>
+
+                <div id="noCellPrompt" class="text-center py-5 text-muted fst-italic">
+                    <i class="bi bi-cursor fs-2 text-secondary opacity-50 d-block mb-2"></i>
+                    Click any cell on the matrix grid to configure mapping &amp; format.
+                </div>
+
+                <div id="cellEditorForm" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label fs-12 fw-semibold text-secondary">Mapping Type</label>
+                        <select id="cellMappingType" class="form-select form-select-sm" onchange="onMappingTypeChange()">
+                            <option value="">-- No Mapping (Empty) --</option>
+                            <option value="field">Database Field (from Structure)</option>
+                            <option value="formula">Custom Function / Formula</option>
+                            <option value="static">Static Label / Text</option>
+                        </select>
+                    </div>
+
+                    <!-- Mode 1: Field Selection -->
+                    <div class="mb-3" id="fieldSelectBlock" style="display:none;">
+                        <label class="form-label fs-12 fw-semibold text-secondary">Available Client Field</label>
+                        <select id="fieldSelectInput" class="form-select form-select-sm" onchange="onFieldValueChange()">
+                            <option value="">-- Choose Field --</option>
+                            {{ range $sheet, $cols := .AvailableColumns }}
+                                <optgroup label="Form: {{ $sheet }}">
+                                    {{ range $cols }}
+                                        <option value="{{ .ExcelColumnName }}">{{ .ExcelColumnName }} ({{ .CellAddress }})</option>
+                                    {{ end }}
+                                </optgroup>
+                            {{ end }}
+                        </select>
+                    </div>
+
+                    <!-- Mode 2: Formula / Function Input -->
+                    <div class="mb-3" id="formulaInputBlock" style="display:none;">
+                        <label class="form-label fs-12 fw-semibold text-secondary">Helper Formula (30+ formulas supported)</label>
+                        <div class="input-group input-group-sm mb-1">
+                            <input type="text" id="formulaTextInput" class="form-control font-monospace fs-12" placeholder="e.g. pick_up_date({case_id})">
+                        </div>
+                        <div class="form-text fs-11">
+                            Common: <code>pick_up_date({case_id})</code>, <code>tat({case_id})</code>, <code>financial_remarks({case_task_id})</code>, <code>agency_stamp()</code>
+                        </div>
+                    </div>
+
+                    <!-- Mode 3: Static Text -->
+                    <div class="mb-3" id="staticInputBlock" style="display:none;">
+                        <label class="form-label fs-12 fw-semibold text-secondary">Static Text Value</label>
+                        <input type="text" id="staticTextInput" class="form-control form-control-sm" placeholder="e.g. Background Verification Report">
+                    </div>
+
+                    <!-- Style Formatting -->
+                    <div class="border-top pt-3 mt-3">
+                        <h6 class="fs-12 fw-bold text-secondary text-uppercase mb-2">Cell Styling</h6>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label fs-11 text-muted mb-1">Col Width (px)</label>
+                                <input type="number" id="cellWidthInput" class="form-control form-control-sm" placeholder="Default">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fs-11 text-muted mb-1">Row Height (px)</label>
+                                <input type="number" id="cellHeightInput" class="form-control form-control-sm" placeholder="Default">
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fs-11 text-muted mb-1">Alignment</label>
+                                <select id="cellAlignInput" class="form-select form-select-sm">
+                                    <option value="">Default</option>
+                                    <option value="left">Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fs-11 text-muted mb-1">Font Size</label>
+                                <select id="cellFontSizeInput" class="form-select form-select-sm">
+                                    <option value="">Default (11pt)</option>
+                                    <option value="9">9pt</option>
+                                    <option value="10">10pt</option>
+                                    <option value="12">12pt (Bold)</option>
+                                    <option value="14">14pt (Title)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-sm btn-primary px-3" onclick="applyCellSettings()">
+                                <i class="bi bi-check-lg me-1"></i> Apply Cell
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearCellMapping()">
+                                <i class="bi bi-trash"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const maxRow = {{ .Template.MaxRow }};
+const maxCol = "{{ .Template.MaxCol }}";
+let mappings = {};
+try {
+    mappings = JSON.parse(document.getElementById('hiddenMappings').value || '{}');
+} catch (e) {
+    mappings = {};
+}
+
+let layoutConfig = {};
+try {
+    layoutConfig = JSON.parse(document.getElementById('hiddenLayoutConfig').value || '{}');
+} catch (e) {
+    layoutConfig = { colWidths: {}, rowHeights: {}, styles: {} };
+}
+
+let activeCell = null;
+
+function colNameToIndex(col) {
+    let index = 0;
+    for (let i = 0; i < col.length; i++) {
+        index = index * 26 + (col.charCodeAt(i) - 64);
+    }
+    return index;
+}
+
+function indexToColName(num) {
+    let s = "";
+    while (num > 0) {
+        let m = (num - 1) % 26;
+        s = String.fromCharCode(65 + m) + s;
+        num = Math.floor((num - m) / 26);
+    }
+    return s;
+}
+
+function initGrid() {
+    const colCount = Math.max(colNameToIndex(maxCol), 6);
+    const rowCount = Math.max(maxRow, 15);
+
+    const thead = document.getElementById('matrixHeader');
+    const tbody = document.getElementById('matrixBody');
+
+    // Header Row (Columns A, B, C...)
+    let headHtml = '<tr><th class="corner-cell">#</th>';
+    for (let c = 1; c <= colCount; c++) {
+        const cName = indexToColName(c);
+        headHtml += `<th data-col="${cName}">${cName}</th>`;
+    }
+    headHtml += '</tr>';
+    thead.innerHTML = headHtml;
+
+    // Body Rows
+    let bodyHtml = '';
+    for (let r = 1; r <= rowCount; r++) {
+        bodyHtml += `<tr><td class="row-header">${r}</td>`;
+        for (let c = 1; c <= colCount; c++) {
+            const cellId = `${indexToColName(c)}${r}`;
+            bodyHtml += `<td class="grid-cell" id="cell_${cellId}" data-cell="${cellId}" onclick="selectCell('${cellId}')"></td>`;
+        }
+        bodyHtml += '</tr>';
+    }
+    tbody.innerHTML = bodyHtml;
+
+    // Render initial mappings into table
+    refreshAllCells();
+}
+
+function renderCellContent(cellId) {
+    const el = document.getElementById(`cell_${cellId}`);
+    if (!el) return;
+
+    const m = mappings[cellId];
+    if (m && m.type && m.value) {
+        el.classList.add('has-mapping');
+        let badgeClass = 'badge-field';
+        if (m.type === 'formula') badgeClass = 'badge-formula';
+        if (m.type === 'static') badgeClass = 'badge-static';
+        el.innerHTML = `<span class="cell-type-badge ${badgeClass}">${m.type}</span><span title="${m.value}">${m.value}</span>`;
+    } else {
+        el.classList.remove('has-mapping');
+        el.innerHTML = '';
+    }
+}
+
+function refreshAllCells() {
+    for (const cellId in mappings) {
+        renderCellContent(cellId);
+    }
+}
+
+function selectCell(cellId) {
+    if (activeCell) {
+        const prev = document.getElementById(`cell_${activeCell}`);
+        if (prev) prev.classList.remove('selected');
+    }
+
+    activeCell = cellId;
+    const cur = document.getElementById(`cell_${cellId}`);
+    if (cur) cur.classList.add('selected');
+
+    document.getElementById('selectedCellDisplay').innerText = `Cell: ${cellId}`;
+    document.getElementById('inspectorCellAddress').innerText = cellId;
+    document.getElementById('noCellPrompt').style.display = 'none';
+    document.getElementById('cellEditorForm').style.display = 'block';
+
+    const m = mappings[cellId] || { type: '', value: '' };
+    document.getElementById('cellMappingType').value = m.type || '';
+    onMappingTypeChange();
+
+    if (m.type === 'field') {
+        document.getElementById('fieldSelectInput').value = m.value || '';
+    } else if (m.type === 'formula') {
+        document.getElementById('formulaTextInput').value = m.value || '';
+    } else if (m.type === 'static') {
+        document.getElementById('staticTextInput').value = m.value || '';
+    }
+}
+
+function onMappingTypeChange() {
+    const type = document.getElementById('cellMappingType').value;
+    document.getElementById('fieldSelectBlock').style.display = (type === 'field') ? 'block' : 'none';
+    document.getElementById('formulaInputBlock').style.display = (type === 'formula') ? 'block' : 'none';
+    document.getElementById('staticInputBlock').style.display = (type === 'static') ? 'block' : 'none';
+}
+
+function onFieldValueChange() {
+    // auto apply when picking from dropdown
+    applyCellSettings();
+}
+
+function applyCellSettings() {
+    if (!activeCell) return;
+    const type = document.getElementById('cellMappingType').value;
+    let val = '';
+    if (type === 'field') {
+        val = document.getElementById('fieldSelectInput').value;
+    } else if (type === 'formula') {
+        val = document.getElementById('formulaTextInput').value;
+    } else if (type === 'static') {
+        val = document.getElementById('staticTextInput').value;
+    }
+
+    if (type && val) {
+        mappings[activeCell] = { type: type, value: val };
+    } else {
+        delete mappings[activeCell];
+    }
+
+    renderCellContent(activeCell);
+}
+
+function clearCellMapping() {
+    if (!activeCell) return;
+    delete mappings[activeCell];
+    document.getElementById('cellMappingType').value = '';
+    onMappingTypeChange();
+    renderCellContent(activeCell);
+}
+
+function finalizeGrid() {
+    document.getElementById('hiddenMappings').value = JSON.stringify(mappings);
+    document.getElementById('hiddenLayoutConfig').value = JSON.stringify(layoutConfig);
+    return true;
+}
+
+document.addEventListener('DOMContentLoaded', initGrid);
+</script>
+
+{{ template "footer.html" . }}

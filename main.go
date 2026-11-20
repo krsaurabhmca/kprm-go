@@ -135,6 +135,9 @@ func main() {
 
 	r.GET("/manage_reports.php", redirectWithQuery("/reports"))
 	r.GET("/generate_report.php", redirectWithQuery("/reports/generate"))
+	r.GET("/edit_report_config.php", redirectWithQuery("/reports/config"))
+	r.POST("/edit_report_config.php", handlers.SaveReportConfig)
+	r.POST("/process_report.php", handlers.SaveReportConfig)
 
 	r.GET("/whatsapp_chat.php", redirectWithQuery("/whatsapp"))
 	r.GET("/communication.php", redirectWithQuery("/communication"))
@@ -221,6 +224,8 @@ func main() {
 
 		// Reports & MIS Exports
 		authGroup.GET("/reports", handlers.ManageReports)
+		authGroup.GET("/reports/config", handlers.EditReportConfig)
+		authGroup.POST("/reports/config", handlers.SaveReportConfig)
 		authGroup.GET("/reports/generate", handlers.GenerateReport)
 
 		// Communication Hub & WhatsApp Live Suite
