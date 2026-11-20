@@ -1,0 +1,242 @@
+<!-- Functions Help Modal -->
+<div class="map-modal modal-backdrop-blur z-topmost" id="functionsModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); backdrop-filter:blur(2px); z-index:1060; align-items:center; justify-content:center; padding:1rem;">
+    <div class="map-modal-content modal-dialog-box" style="max-width:780px; width:95%; max-height:88vh; display:flex; flex-direction:column; border-radius:12px; overflow:hidden; box-shadow:0 20px 40px -10px rgba(15,23,42,0.25); background:#ffffff; border:1px solid #e2e8f0;">
+        <div class="modal-dialog-header" style="display:flex; justify-content:space-between; align-items:center; padding:1rem 1.4rem; background:#ffffff; border-bottom:1px solid #e2e8f0;">
+            <div style="display:flex; align-items:center; gap:0.65rem;">
+                <div style="width:34px; height:34px; border-radius:8px; background:#eff6ff; color:#4f46e5; display:flex; align-items:center; justify-content:center; border:1px solid #bfdbfe;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#0f172a;">Available Custom Functions</h3>
+                    <p style="margin:0.15rem 0 0; font-size:0.78rem; color:#64748b;">Click any formula or row to insert directly into your field.</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeFunctionsModal()" class="modal-dialog-close" style="background:#f1f5f9; border:1px solid #e2e8f0; border-radius:6px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; line-height:1; cursor:pointer; color:#64748b;">&times;</button>
+        </div>
+
+        <!-- Search Bar & Category Filter Strip -->
+        <div style="padding:0.65rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; flex-direction:column; gap:0.5rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+                <div style="position:relative; flex:1;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:0.65rem; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="functionsSearchInput" onkeyup="filterFunctionsList()" class="form-control" placeholder="Search functions (e.g. pick_up_date, reverted_date, tat, attachments, stamp)..." style="padding-left:2rem; padding-right:1.75rem; font-size:0.84rem; width:100%; border-radius:6px; box-sizing:border-box;">
+                    <button type="button" id="functionsClearSearchBtn" onclick="clearFunctionsSearch()" style="display:none; position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; font-size:1rem; cursor:pointer; line-height:1;">&times;</button>
+                </div>
+                <span id="functionsSearchCount" style="font-size:0.75rem; font-weight:700; color:#2563eb; white-space:nowrap; background:#eff6ff; border:1px solid #bfdbfe; padding:0.25rem 0.6rem; border-radius:999px;">25+ functions</span>
+            </div>
+            <!-- Category Pills -->
+            <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                <button type="button" class="func-cat-pill active" onclick="setFuncCategory('All', this)" style="padding:0.2rem 0.6rem; font-size:0.72rem; font-weight:700; border-radius:999px; border:1px solid #cbd5e1; background:#0f172a; color:#fff; cursor:pointer;">All</button>
+                <button type="button" class="func-cat-pill" onclick="setFuncCategory('Dates & TAT', this)" style="padding:0.2rem 0.6rem; font-size:0.72rem; font-weight:600; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer;">Dates &amp; TAT</button>
+                <button type="button" class="func-cat-pill" onclick="setFuncCategory('Tasks & Workflow', this)" style="padding:0.2rem 0.6rem; font-size:0.72rem; font-weight:600; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer;">Tasks &amp; Workflow</button>
+                <button type="button" class="func-cat-pill" onclick="setFuncCategory('Case Summary', this)" style="padding:0.2rem 0.6rem; font-size:0.72rem; font-weight:600; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer;">Case Summary</button>
+                <button type="button" class="func-cat-pill" onclick="setFuncCategory('Reports & Media', this)" style="padding:0.2rem 0.6rem; font-size:0.72rem; font-weight:600; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer;">Reports &amp; Media</button>
+                <button type="button" class="func-cat-pill" onclick="setFuncCategory('General', this)" style="padding:0.2rem 0.6rem; font-size:0.72rem; font-weight:600; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#334155; cursor:pointer;">General</button>
+            </div>
+        </div>
+
+        <div style="overflow-y:auto; flex:1; padding:0;">
+            <table class="table-modern text-sm" id="availableFunctionsTable" style="margin:0; width:100%; border-collapse:collapse;">
+                <thead style="position:sticky; top:0; background:#f8fafc; z-index:2; border-bottom:1px solid #e2e8f0;">
+                    <tr>
+                        <th class="text-left" style="width:280px; padding:0.55rem 1rem; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.04em; color:#475569;">Function Formula</th>
+                        <th class="text-left" style="padding:0.55rem 1rem; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.04em; color:#475569;">Description</th>
+                        <th class="text-right" style="width:80px; padding:0.55rem 1rem; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.04em; color:#475569;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="function-item-row" onclick="selectFunction('pick_up_date({case_id})')" data-name="pick_up_date({case_id})" data-desc="date of pick up (initial case creation timestamp)" data-category="Dates & TAT" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">pick_up_date({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Date of Pick Up (initial case creation timestamp). Supports optional format e.g. pick_up_date({case_id}, 'd-m-Y').</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('pick_up_date({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('reverted_date({case_id})')" data-name="reverted_date({case_id})" data-desc="date of reverted latest verification timestamp" data-category="Dates & TAT" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">reverted_date({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Date of Reverted (latest verification timestamp). Supports optional format e.g. reverted_date({case_id}, 'd-m-Y').</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('reverted_date({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('tat({case_id})')" data-name="tat({case_id})" data-desc="turnaround time in days between pickup and reverted" data-category="Dates & TAT" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">tat({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Turnaround Time (TAT) in days automatically computed between pick_up_date and reverted_date.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('tat({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('current_date()')" data-name="current_date()" data-desc="returns current server date" data-category="Dates & TAT" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">current_date()</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Returns current server date. Supports optional format e.g. current_date('d-m-Y').</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('current_date()')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('format_date({Date}, \'d-M-Y\')')" data-name="format_date({Date})" data-desc="formats raw date into standard display format" data-category="Dates & TAT" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">format_date({Date}, 'd-M-Y')</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Formats any raw date into standard display format (e.g. 'd-M-Y').</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('format_date({Date}, \'d-M-Y\')')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('task_count({case_id})')" data-name="task_count({case_id})" data-desc="returns total tasks assigned to the case" data-category="Tasks & Workflow" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">task_count({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Returns total number of tasks assigned to the specific case.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('task_count({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('type_of_document({case_id})')" data-name="type_of_document({case_id})" data-desc="comma separated list of assigned tasks and counts" data-category="Tasks & Workflow" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">type_of_document({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Comma-separated list of assigned tasks and counts (e.g. ITR-2, Address-1).</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('type_of_document({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('fe_name({case_id})')" data-name="fe_name({case_id})" data-desc="field executives verifiers assigned to case" data-category="Tasks & Workflow" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">fe_name({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Comma-separated list of Field Executives (Verifiers) assigned to this case.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('fe_name({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('task_remarks({case_task_id})')" data-name="task_remarks({case_task_id})" data-desc="formatted string of task final status and remark" data-category="Tasks & Workflow" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">task_remarks({case_task_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Formatted string of the task final status and remark, translated with client keywords.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('task_remarks({case_task_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('case_status({case_id})')" data-name="case_status({case_id})" data-desc="summary of task counts per status percentage" data-category="Case Summary" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">case_status({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Summary of task counts per status (e.g. '2 Completed, 1 Pending (67% Completed)').</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('case_status({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('case_stage({case_id})')" data-name="case_stage({case_id})" data-desc="current workflow progress stage" data-category="Case Summary" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">case_stage({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Returns current workflow progress stage ('Pending', 'In Progress', 'Completed').</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('case_stage({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('overall_status({case_id})')" data-name="overall_status({case_id})" data-desc="computes final case status keyword" data-category="Case Summary" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">overall_status({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Aggregates task remarks and computes the final case status keyword.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('overall_status({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('client_status_keyword({case_id}, {Status})')" data-name="client_status_keyword({case_id})" data-desc="translates standard status to client terminology" data-category="Case Summary" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">client_status_keyword({case_id}, {Status})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Translates standard statuses (Positive, Negative, CNV) to client-configured terminology.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('client_status_keyword({case_id}, {Status})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('attachments({case_id}, 2)')" data-name="attachments({case_id})" data-desc="fetches case attachments photos documents" data-category="Reports & Media" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">attachments({case_id}, 2)</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Fetches case attachments. Supports custom columns per row: attachments({case_id}, 2) or 1 per row.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('attachments({case_id}, 2)')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('stamp({case_id})')" data-name="stamp({case_id})" data-desc="returns html image of client agency stamp" data-category="Reports & Media" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">stamp({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Returns HTML image tag of the client agency stamp for official reports.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('stamp({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('report_format({case_id})')" data-name="report_format({case_id})" data-desc="clean numbered report remarks matching client format" data-category="Reports & Media" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">report_format({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Clean, professional numbered report remarks matching official client format with uppercase bold headers and dividers.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('report_format({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('combine_text({Text1}, {Text2})')" data-name="combine_text({Text1}, {Text2})" data-desc="concatenates strings" data-category="General" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">combine_text({Text1}, {Text2})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Concatenates two or more strings together with a space.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('combine_text({Text1}, {Text2})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('serial({case_id})')" data-name="serial({case_id})" data-desc="auto-incrementing serial row number" data-category="General" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">serial({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Auto-incrementing serial row number (1, 2, 3...) for MIS tables and Excel exports.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('serial({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr class="function-item-row" onclick="selectFunction('client_name({case_id})')" data-name="client_name({case_id})" data-desc="returns client organization name" data-category="General" style="cursor:pointer; border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:0.65rem 1rem;"><code style="font-weight:700; color:#4f46e5; font-size:0.83rem;">client_name({case_id})</code></td>
+                        <td style="padding:0.65rem 1rem; color:#475569; font-size:0.82rem;">Returns the client organization name associated with the case.</td>
+                        <td style="padding:0.65rem 1rem; text-align:right;"><button type="button" class="btn btn-secondary btn-sm" onclick="selectFunction('client_name({case_id})')">Insert</button></td>
+                    </tr>
+                    <tr id="functionsNoMatchRow" style="display:none;">
+                        <td colspan="3" style="text-align:center; padding:2.5rem 1rem; color:#94a3b8; font-size:0.86rem;">
+                            No functions matching your search or category filter.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeFuncCategory = 'All';
+
+    function setFuncCategory(cat, btn) {
+        activeFuncCategory = cat;
+        document.querySelectorAll('.func-cat-pill').forEach(b => {
+            b.style.background = '#fff';
+            b.style.color = '#334155';
+            b.style.fontWeight = '600';
+            b.classList.remove('active');
+        });
+        if (btn) {
+            btn.style.background = '#0f172a';
+            btn.style.color = '#fff';
+            btn.style.fontWeight = '700';
+            btn.classList.add('active');
+        }
+        filterFunctionsList();
+    }
+
+    function selectFunction(funcName) {
+        if (typeof currentTargetInput !== 'undefined' && currentTargetInput) {
+            const el = document.getElementById(currentTargetInput);
+            if (el) {
+                el.value = funcName;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+        closeFunctionsModal();
+    }
+
+    function closeFunctionsModal() {
+        const modal = document.getElementById('functionsModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function filterFunctionsList() {
+        const input = document.getElementById('functionsSearchInput');
+        const clearBtn = document.getElementById('functionsClearSearchBtn');
+        const countSpan = document.getElementById('functionsSearchCount');
+        const filter = input ? input.value.toLowerCase().trim() : '';
+        const rows = document.querySelectorAll('#availableFunctionsTable .function-item-row');
+        const noMatchRow = document.getElementById('functionsNoMatchRow');
+
+        if (clearBtn) {
+            clearBtn.style.display = filter ? 'block' : 'none';
+        }
+
+        let visibleCount = 0;
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const desc = row.getAttribute('data-desc') || '';
+            const cat = row.getAttribute('data-category') || '';
+
+            const matchesFilter = !filter || name.includes(filter) || desc.includes(filter);
+            const matchesCat = (activeFuncCategory === 'All') || (cat === activeFuncCategory);
+
+            if (matchesFilter && matchesCat) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (noMatchRow) {
+            noMatchRow.style.display = (visibleCount === 0) ? '' : 'none';
+        }
+
+        if (countSpan) {
+            countSpan.innerText = filter || activeFuncCategory !== 'All' 
+                ? `${visibleCount} of ${rows.length} found` 
+                : `${rows.length} functions`;
+        }
+    }
+
+    function clearFunctionsSearch() {
+        const input = document.getElementById('functionsSearchInput');
+        if (input) {
+            input.value = '';
+            input.focus();
+            filterFunctionsList();
+        }
+    }
+</script>

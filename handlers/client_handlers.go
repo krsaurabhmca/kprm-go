@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,21 +19,25 @@ import (
 )
 
 type ClientViewItem struct {
-	ID                    int
-	Name                  string
-	Email                 string
-	AgencyName            string
-	AgencyStamp           string
-	StampImage            string
-	EmailReportingEnabled int
-	KeywordPositive       string
-	KeywordNegative       string
-	KeywordCNV            string
-	SmtpAccountID         int
-	WhatsappAccountID     int
-	StructureCount        int
-	CaseCount             int
-	CreatedAt             string
+	ID                    int    `json:"id"`
+	Name                  string `json:"name"`
+	Email                 string `json:"email"`
+	AgencyName            string `json:"agency_name"`
+	AgencyStamp           string `json:"agency_stamp"`
+	StampImage            string `json:"stamp_image"`
+	EmailReportingEnabled int    `json:"email_reports_enabled"`
+	KeywordPositive       string `json:"keyword_positive"`
+	KeywordNegative       string `json:"keyword_negative"`
+	KeywordCNV            string `json:"keyword_cnv"`
+	SmtpAccountID         int    `json:"smtp_account_id"`
+	WhatsappAccountID     int    `json:"whatsapp_account_id"`
+	SmtpTitle             string `json:"smtp_title"`
+	WhatsappTitle         string `json:"whatsapp_title"`
+	Initials              string `json:"initials"`
+	StructureCount        int    `json:"structure_count"`
+	CaseCount             int    `json:"case_count"`
+	CreatedAt             string `json:"created_at"`
+	JSONData              string `json:"-"`
 }
 
 // ListClients displays clients directory
@@ -81,11 +86,14 @@ func ListClients(c *gin.Context) {
 			       COALESCE(cl.agency_stamp, ''), COALESCE(cl.email_reports_enabled, 1),
 			       COALESCE(cl.keyword_positive, ''), COALESCE(cl.keyword_negative, ''), COALESCE(cl.keyword_cnv, ''),
 			       COALESCE(cl.smtp_account_id, 0), COALESCE(cl.whatsapp_account_id, 0),
+			       COALESCE(s.title, '') as smtp_title, COALESCE(w.title, '') as whatsapp_title,
 			       COALESCE(DATE_FORMAT(cl.created_at, '%d-%b-%Y'), ''),
 			       (SELECT COUNT(*) FROM client_structures cs WHERE cs.client_id = cl.id) as structure_count,
 			       (SELECT COUNT(*) FROM cases ca JOIN client_structures cs ON ca.structure_id = cs.id WHERE cs.client_id = cl.id) as case_count
 			FROM clients cl
-			ORDER BY cl.name ASC
+			LEFT JOIN communication_accounts s ON cl.smtp_account_id = s.id
+			LEFT JOIN communication_accounts w ON cl.whatsapp_account_id = w.id
+			ORDER BY cl.created_at DESC, cl.id DESC
 		`
 		rows, err := db.Query(q)
 		if err == nil {
@@ -97,9 +105,31 @@ func ListClients(c *gin.Context) {
 					&item.AgencyStamp, &item.EmailReportingEnabled,
 					&item.KeywordPositive, &item.KeywordNegative, &item.KeywordCNV,
 					&item.SmtpAccountID, &item.WhatsappAccountID,
+					&item.SmtpTitle, &item.WhatsappTitle,
 					&item.CreatedAt, &item.StructureCount, &item.CaseCount,
 				)
 				item.StampImage = item.AgencyStamp
+
+				// Compute initials
+				cleanName := strings.TrimSpace(item.Name)
+				var inits string
+				for _, w := range strings.Fields(cleanName) {
+					if len(w) > 0 {
+						inits += strings.ToUpper(string(w[0]))
+						if len(inits) >= 2 {
+							break
+						}
+					}
+				}
+				if inits == "" {
+					inits = "CL"
+				}
+				item.Initials = inits
+
+				// JSON Data
+				b, _ := json.Marshal(item)
+				item.JSONData = string(b)
+
 				clients = append(clients, item)
 			}
 		} else {
@@ -116,6 +146,12 @@ func ListClients(c *gin.Context) {
 				for fRows.Next() {
 					var item ClientViewItem
 					_ = fRows.Scan(&item.ID, &item.Name, &item.CreatedAt, &item.StructureCount)
+					item.Initials = "CL"
+					if len(item.Name) >= 2 {
+						item.Initials = strings.ToUpper(item.Name[:2])
+					}
+					b, _ := json.Marshal(item)
+					item.JSONData = string(b)
 					clients = append(clients, item)
 				}
 			}

@@ -1,435 +1,582 @@
 {{ template "header.html" . }}
 
-<div class="content-body p-4 wizard-container">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+<style>
+    .comm-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .comm-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .comm-head-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .comm-head h1 {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+    .comm-head p {
+        color: #64748b;
+        font-size: 0.84rem;
+        margin: 0.2rem 0 0;
+    }
+    .comm-layout {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        gap: 1.25rem;
+        align-items: start;
+    }
+    .comm-nav {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        position: sticky;
+        top: 20px;
+    }
+    .comm-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 8px;
+        color: #475569;
+        text-decoration: none;
+        font-size: 0.86rem;
+        font-weight: 600;
+        transition: background 0.15s, color 0.15s;
+    }
+    .comm-nav-item:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+    .comm-nav-item.active {
+        background: #eff6ff;
+        color: #2563eb;
+        font-weight: 700;
+    }
+    .comm-card {
+        background: #ffffff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+    .comm-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.85rem;
+    }
+    .comm-card-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .comm-card-subtitle {
+        color: #64748b;
+        font-size: 0.82rem;
+        margin: 0.2rem 0 0;
+    }
+    .comm-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .comm-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        padding: 0.65rem 0.85rem;
+        border-bottom: 1px solid var(--border-color);
+        text-align: left;
+    }
+    .comm-table td {
+        padding: 0.65rem 0.85rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+        font-size: 0.84rem;
+    }
+    .comm-table tr:hover td {
+        background: #f8fafc;
+    }
+    .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+    .badge-default { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-active { background: #e0e7ff; color: #4338ca; }
+    .badge-inactive { background: #f1f5f9; color: #64748b; }
+    .badge-tasktype-all { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+    .badge-tasktype-ito { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-tasktype-physical { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-tasktype-banking { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+
+    @media (max-width: 860px) {
+        .comm-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="content-body p-4 wizard-container comm-wrapper">
+    <div class="comm-head">
         <div>
-            <h1 class="h3 fw-bold text-dark mb-0">Communication Hub</h1>
-            <p class="text-secondary small mb-0 mt-1">Multi-instance WhatsApp (Green API), SMTP mailers, notification templates, and automated event triggers</p>
+            <div class="comm-head-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                    stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <h1>Communication Hub</h1>
+            </div>
+            <p>Manage multi-account SMTP, Green API WhatsApp channels, notification templates, and client email report settings.</p>
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newAccountModal">
-                <i class="bi bi-plus-lg me-1"></i> Add Account
-            </button>
-            <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newTemplateModal">
-                <i class="bi bi-chat-left-dots me-1"></i> Add Template
-            </button>
+        <div>
+            <a href="/settings" class="btn btn-sm btn-secondary" style="text-decoration:none;">&larr; Back to Settings</a>
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-pills mb-4 gap-1 p-1 bg-white border rounded">
-        <li class="nav-item">
-            <a class="nav-link py-2 px-3 fs-13 fw-bold {{ if eq .ActiveTab "smtp" }}active{{ end }}" href="/communication?tab=smtp">
-                <i class="bi bi-envelope me-1"></i> SMTP Email ({{ len .SmtpAccounts }})
+    <div class="comm-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="comm-nav">
+            <a href="/communication?tab=smtp" class="comm-nav-item {{ if eq .ActiveTab "smtp" }}active{{ end }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                SMTP Accounts ({{ len .SmtpAccounts }})
             </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link py-2 px-3 fs-13 fw-bold {{ if eq .ActiveTab "whatsapp" }}active{{ end }}" href="/communication?tab=whatsapp">
-                <i class="bi bi-whatsapp me-1"></i> Green API WhatsApp ({{ len .WhatsappAccounts }})
+            <a href="/communication?tab=whatsapp" class="comm-nav-item {{ if eq .ActiveTab "whatsapp" }}active{{ end }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
+                WhatsApp Accounts ({{ len .WhatsappAccounts }})
             </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link py-2 px-3 fs-13 fw-bold {{ if eq .ActiveTab "templates" }}active{{ end }}" href="/communication?tab=templates">
-                <i class="bi bi-chat-quote me-1"></i> Templates ({{ len .Templates }})
+            <a href="/communication?tab=templates" class="comm-nav-item {{ if eq .ActiveTab "templates" }}active{{ end }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Message Templates ({{ len .Templates }})
             </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link py-2 px-3 fs-13 fw-bold {{ if eq .ActiveTab "client_routing" }}active{{ end }}" href="/communication?tab=client_routing">
-                <i class="bi bi-building-gear me-1"></i> Client Routing ({{ len .ClientRoutes }})
+            <a href="/communication?tab=client_routing" class="comm-nav-item {{ if eq .ActiveTab "client_routing" }}active{{ end }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Client Email Reports ({{ len .ClientRoutes }})
             </a>
-        </li>
-    </ul>
+        </nav>
 
-    <div class="row g-4">
-        <!-- Main Tab Content (8 cols) -->
-        <div class="col-12 col-xl-8">
+        <!-- Right Main Card Content -->
+        <div class="comm-card">
+
+            <!-- TAB 1: SMTP -->
             {{ if eq .ActiveTab "smtp" }}
-            <!-- SMTP Tab -->
-            <div class="card overflow-hidden p-0 mb-4">
-                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fs-14 fw-bold text-dark mb-0"><i class="bi bi-envelope text-primary me-2"></i> Configured SMTP Mailer Accounts</h5>
+            <div class="comm-card-header">
+                <div>
+                    <h2 class="comm-card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        Email (SMTP) Accounts
+                    </h2>
+                    <p class="comm-card-subtitle">Manage outgoing SMTP servers, assign task-type routing, and set default credentials.</p>
                 </div>
-                <div class="table-responsive">
-                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-3">Title</th>
-                                <th>Task Scope</th>
-                                <th class="text-center">Primary</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-end pe-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{ range .SmtpAccounts }}
-                            <tr>
-                                <td class="ps-3 fw-bold text-dark">{{ .AccountName }}</td>
-                                <td><span class="badge badge-secondary fs-10">{{ .TaskType }}</span></td>
-                                <td class="text-center">
-                                    {{ if eq .IsDefault 1 }}
-                                        <span class="badge badge-primary fs-10"><i class="bi bi-star-fill me-1"></i>Default</span>
-                                    {{ else }}
-                                        <a href="/communication/account/default?id={{ .ID }}" class="btn btn-sm btn-link p-0 fs-11 text-decoration-none">Set Default</a>
-                                    {{ end }}
-                                </td>
-                                <td class="text-center"><span class="badge badge-success fs-10">{{ .Status }}</span></td>
-                                <td class="text-end pe-3">
-                                    <form action="/communication/account/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this SMTP account?');">
-                                        <input type="hidden" name="account_id" value="{{ .ID }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {{ else }}
-                            <tr><td colspan="5" class="text-center py-4 text-muted fst-italic">No SMTP accounts configured.</td></tr>
-                            {{ end }}
-                        </tbody>
-                    </table>
-                </div>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openSmtpModal()" style="font-weight:700;">+ Add SMTP Account</button>
             </div>
 
-            {{ else if eq .ActiveTab "whatsapp" }}
-            <!-- WhatsApp Tab -->
-            <div class="card overflow-hidden p-0 mb-4">
-                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fs-14 fw-bold text-dark mb-0"><i class="bi bi-whatsapp text-success me-2"></i> Green API WhatsApp Instances</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-3">Instance Title</th>
-                                <th>Task Scope</th>
-                                <th class="text-center">Primary</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-end pe-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{ range .WhatsappAccounts }}
-                            <tr>
-                                <td class="ps-3 fw-bold text-dark">{{ .AccountName }}</td>
-                                <td><span class="badge badge-secondary fs-10">{{ .TaskType }}</span></td>
-                                <td class="text-center">
-                                    {{ if eq .IsDefault 1 }}
-                                        <span class="badge badge-success fs-10"><i class="bi bi-star-fill me-1"></i>Default</span>
-                                    {{ else }}
-                                        <a href="/communication/account/default?id={{ .ID }}" class="btn btn-sm btn-link p-0 fs-11 text-decoration-none">Set Default</a>
-                                    {{ end }}
-                                </td>
-                                <td class="text-center"><span class="badge badge-success fs-10">{{ .Status }}</span></td>
-                                <td class="text-end pe-3">
-                                    <form action="/communication/account/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this WhatsApp instance?');">
-                                        <input type="hidden" name="account_id" value="{{ .ID }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
+            <table class="comm-table">
+                <thead>
+                    <tr>
+                        <th>Account Title</th>
+                        <th>Task Scope</th>
+                        <th>Default</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .SmtpAccounts }}
+                    <tr>
+                        <td>
+                            <strong style="color:#0f172a;">{{ .AccountName }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge-pill badge-tasktype-{{ .TaskType }}">{{ .TaskType }}</span>
+                        </td>
+                        <td>
+                            {{ if eq .IsDefault 1 }}
+                                <span class="badge-pill badge-default">★ Primary Default</span>
                             {{ else }}
-                            <tr><td colspan="5" class="text-center py-4 text-muted fst-italic">No WhatsApp accounts configured.</td></tr>
+                                <a href="/communication/account/default?id={{ .ID }}" style="font-size:0.75rem; color:#2563eb; text-decoration:none;">Set Default</a>
                             {{ end }}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {{ else if eq .ActiveTab "templates" }}
-            <!-- Templates Tab -->
-            <div class="card overflow-hidden p-0 mb-4">
-                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fs-14 fw-bold text-dark mb-0"><i class="bi bi-chat-quote text-info me-2"></i> Notification &amp; Dispatch Templates</h5>
-                </div>
-                <div class="list-group list-group-flush fs-13">
-                    {{ range .Templates }}
-                    <div class="list-group-item p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h6 class="fw-bold mb-0 text-dark">{{ .EventName }}</h6>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge {{ if eq .Channel "whatsapp" }}badge-success{{ else }}badge-primary{{ end }} text-uppercase">{{ .Channel }}</span>
-                                <form action="/communication/template/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this template?');">
-                                    <input type="hidden" name="template_id" value="{{ .ID }}">
-                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 fs-12 text-decoration-none"><i class="bi bi-trash"></i></button>
-                                </form>
-                            </div>
-                        </div>
-                        {{ if .Subject.Valid }}
-                            {{ if .Subject.String }}
-                                <p class="text-secondary small mb-1"><strong>Subject:</strong> {{ .Subject.String }}</p>
-                            {{ end }}
-                        {{ end }}
-                        <div class="p-2 bg-light rounded border font-monospace text-muted fs-11" style="white-space: pre-wrap;">{{ .Body }}</div>
-                    </div>
+                        </td>
+                        <td>
+                            <span class="badge-pill {{ if eq .Status "active" }}badge-active{{ else }}badge-inactive{{ end }}">{{ .Status }}</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <form action="/communication/account/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this SMTP account?');">
+                                <input type="hidden" name="account_id" value="{{ .ID }}">
+                                <button type="submit" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem; font-size:0.75rem; color:#b91c1c;">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
                     {{ else }}
-                    <div class="p-4 text-center text-muted fst-italic">No templates registered yet.</div>
+                    <tr><td colspan="5" style="text-align:center; padding:2rem; color:#94a3b8;">No SMTP accounts configured.</td></tr>
                     {{ end }}
+                </tbody>
+            </table>
+
+            <!-- TAB 2: WHATSAPP -->
+            {{ else if eq .ActiveTab "whatsapp" }}
+            <div class="comm-card-header">
+                <div>
+                    <h2 class="comm-card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        Green API WhatsApp Accounts
+                    </h2>
+                    <p class="comm-card-subtitle">Connect phone instances via Green API for real-time verification dispatches.</p>
                 </div>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openWhatsAppModal()" style="font-weight:700;">+ Add WhatsApp Account</button>
             </div>
 
-            {{ else if eq .ActiveTab "client_routing" }}
-            <!-- Client Routing Tab -->
-            <div class="card overflow-hidden p-0 mb-4">
-                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fs-14 fw-bold text-dark mb-0"><i class="bi bi-building-gear text-primary me-2"></i> Client Communication &amp; Automated Email Reporting</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-3">Client</th>
-                                <th>Reporting Email</th>
-                                <th class="text-center">Automated Reporting</th>
-                                <th>SMTP Mailer</th>
-                                <th>WhatsApp Instance</th>
-                                <th class="text-end pe-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{ range .ClientRoutes }}
-                            <tr>
-                                <td class="ps-3 fw-bold text-dark">{{ .Name }}</td>
-                                <td class="font-monospace text-muted">{{ if .Email }}{{ .Email }}{{ else }}-{{ end }}</td>
-                                <td class="text-center">
-                                    {{ if eq .EmailReportsEnabled 1 }}
-                                        <span class="badge badge-success fs-10"><i class="bi bi-check me-1"></i>Enabled</span>
-                                    {{ else }}
-                                        <span class="badge badge-secondary fs-10">Disabled</span>
-                                    {{ end }}
-                                </td>
-                                <td><span class="badge badge-primary fs-10">{{ .SmtpTitle }}</span></td>
-                                <td><span class="badge badge-success fs-10">{{ .WhatsappTitle }}</span></td>
-                                <td class="text-end pe-3">
-                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fs-11"
-                                            onclick="openClientRouteModal({{ .ID }}, '{{ .Name }}', '{{ .Email }}', {{ .EmailReportsEnabled }}, {{ .SmtpAccountID }}, {{ .WhatsappAccountID }})">
-                                        <i class="bi bi-pencil me-1"></i> Edit
-                                    </button>
-                                </td>
-                            </tr>
+            <table class="comm-table">
+                <thead>
+                    <tr>
+                        <th>Account Title</th>
+                        <th>Task Scope</th>
+                        <th>Default</th>
+                        <th>Status</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .WhatsappAccounts }}
+                    <tr>
+                        <td>
+                            <strong style="color:#0f172a;">{{ .AccountName }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge-pill badge-tasktype-{{ .TaskType }}">{{ .TaskType }}</span>
+                        </td>
+                        <td>
+                            {{ if eq .IsDefault 1 }}
+                                <span class="badge-pill badge-default">★ Primary Default</span>
                             {{ else }}
-                            <tr><td colspan="6" class="text-center py-4 text-muted fst-italic">No clients onboarded.</td></tr>
+                                <a href="/communication/account/default?id={{ .ID }}" style="font-size:0.75rem; color:#2563eb; text-decoration:none;">Set Default</a>
                             {{ end }}
-                        </tbody>
-                    </table>
+                        </td>
+                        <td>
+                            <span class="badge-pill {{ if eq .Status "active" }}badge-active{{ else }}badge-inactive{{ end }}">{{ .Status }}</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <a href="/whatsapp" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.55rem; font-size:0.75rem; text-decoration:none; margin-right:0.3rem;">Open Chat</a>
+                            <form action="/communication/account/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this WhatsApp account?');">
+                                <input type="hidden" name="account_id" value="{{ .ID }}">
+                                <button type="submit" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem; font-size:0.75rem; color:#b91c1c;">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="5" style="text-align:center; padding:2rem; color:#94a3b8;">No WhatsApp accounts configured.</td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+
+            <!-- TAB 3: TEMPLATES -->
+            {{ else if eq .ActiveTab "templates" }}
+            <div class="comm-card-header">
+                <div>
+                    <h2 class="comm-card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        Notification Templates
+                    </h2>
+                    <p class="comm-card-subtitle">Manage automated messages triggered on case and task lifecycle events.</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openTemplateModal()" style="font-weight:700;">+ Add Template</button>
+            </div>
+
+            <table class="comm-table">
+                <thead>
+                    <tr>
+                        <th>Channel</th>
+                        <th>Template Key / Event</th>
+                        <th>Task Type</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Templates }}
+                    <tr>
+                        <td>
+                            <span class="badge-pill {{ if eq .Channel "whatsapp" }}badge-tasktype-physical{{ else }}badge-tasktype-ito{{ end }}">{{ .Channel }}</span>
+                        </td>
+                        <td>
+                            <strong style="font-family:monospace; color:#0f172a;">{{ .EventName }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge-pill badge-tasktype-{{ .TaskType }}">{{ .TaskType }}</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <form action="/communication/template/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this template?');">
+                                <input type="hidden" name="template_id" value="{{ .ID }}">
+                                <button type="submit" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem; font-size:0.75rem; color:#b91c1c;">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">No message templates created.</td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+
+            <!-- TAB 4: CLIENT EMAIL REPORTS -->
+            {{ else if eq .ActiveTab "client_routing" }}
+            <div class="comm-card-header">
+                <div>
+                    <h2 class="comm-card-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        Client Email Reports Routing
+                    </h2>
+                    <p class="comm-card-subtitle">Set report recipient emails and assign distinct SMTP accounts per client organization.</p>
                 </div>
             </div>
-            {{ end }}
-        </div>
 
-        <!-- Right Column: Quick Dispatch Tester (4 cols) -->
-        <div class="col-12 col-xl-4">
-            <div class="card p-4">
-                <h5 class="card-title mb-3 fs-14 fw-bold"><i class="bi bi-send-check text-primary me-2"></i> Dispatch Test Message</h5>
-                <form action="/communication/test" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Channel Type</label>
-                        <select name="channel" class="form-select form-select-sm" required>
-                            <option value="whatsapp">WhatsApp (Green API)</option>
-                            <option value="smtp">SMTP Email</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Account</label>
-                        <select name="account_id" class="form-select form-select-sm" required>
-                            <option value="">-- Choose Account --</option>
-                            {{ range .Accounts }}
-                                <option value="{{ .ID }}">{{ .AccountName }} ({{ .Channel }})</option>
-                            {{ end }}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Recipient (Phone or Email)</label>
-                        <input type="text" name="recipient" class="form-control form-control-sm" placeholder="e.g. 919876543210 or user@test.com" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-sm w-100 py-2 fw-bold shadow-sm">
-                        <i class="bi bi-send me-1"></i> Send Test Message
-                    </button>
-                </form>
-            </div>
+            <table class="comm-table">
+                <thead>
+                    <tr>
+                        <th>Client Organization</th>
+                        <th>Recipient Email</th>
+                        <th>Assigned SMTP Server</th>
+                        <th>Assigned WhatsApp</th>
+                        <th style="text-align:right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .ClientRoutes }}
+                    <tr>
+                        <td><strong style="color:#2563eb;">{{ .ClientName }}</strong></td>
+                        <form action="/communication/route" method="POST">
+                            <input type="hidden" name="client_id" value="{{ .ClientID }}">
+                            <td>
+                                <input type="email" name="recipient_email" value="{{ .RecipientEmail }}" class="form-control" style="font-size:0.8rem; padding:0.3rem 0.5rem;" placeholder="reports@bank.com">
+                            </td>
+                            <td>
+                                <select name="smtp_account_id" class="form-control" style="font-size:0.8rem; padding:0.3rem 0.5rem;">
+                                    <option value="">-- Default System SMTP --</option>
+                                    <option value="-1" {{ if eq .SmtpAccountID -1 }}selected{{ end }}>-- Stop Email Notifications --</option>
+                                    {{ range $.SmtpAccounts }}
+                                        <option value="{{ .ID }}" {{ if eq $.ClientRoutes.SmtpAccountID .ID }}selected{{ end }}>{{ .AccountName }}</option>
+                                    {{ end }}
+                                </select>
+                            </td>
+                            <td>
+                                <select name="whatsapp_account_id" class="form-control" style="font-size:0.8rem; padding:0.3rem 0.5rem;">
+                                    <option value="">-- Default System WhatsApp --</option>
+                                    <option value="-1" {{ if eq .WhatsappAccountID -1 }}selected{{ end }}>-- Stop WhatsApp Notifications --</option>
+                                    {{ range $.WhatsappAccounts }}
+                                        <option value="{{ .ID }}">{{ .AccountName }}</option>
+                                    {{ end }}
+                                </select>
+                            </td>
+                            <td style="text-align:right;">
+                                <button type="submit" class="btn btn-primary btn-sm" style="font-size:0.75rem; padding:0.3rem 0.65rem;">Save</button>
+                            </td>
+                        </form>
+                    </tr>
+                    {{ else }}
+                    <tr><td colspan="5" style="text-align:center; padding:2rem; color:#94a3b8;">No clients onboarded.</td></tr>
+                    {{ end }}
+                </tbody>
+            </table>
+            {{ end }}
+
         </div>
     </div>
 </div>
 
-<!-- Modal: Add Communication Account -->
-<div class="modal fade" id="newAccountModal" tabindex="-1" aria-hidden="true">
+<!-- Modal for SMTP Account -->
+<div class="modal fade" id="smtpModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content" style="border-radius:12px; overflow:hidden;">
             <form action="/communication/account" method="POST">
-                <input type="hidden" name="account_id" value="0">
+                <input type="hidden" name="account_type" value="smtp">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold">Add Communication Account</h5>
+                    <h5 class="modal-title fs-15 fw-bold">Configure Outgoing SMTP Server</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Channel Type <span class="text-danger">*</span></label>
-                        <select name="channel" id="accChannelSelect" class="form-select" onchange="toggleAccountFields(this.value)" required>
-                            <option value="whatsapp">WhatsApp (Green API)</option>
-                            <option value="smtp">SMTP Email</option>
-                        </select>
+                        <label class="form-label fs-13 fw-semibold">Account Title <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Corporate Gmail / SendGrid" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-8">
+                            <label class="form-label fs-13 fw-semibold">SMTP Host <span class="text-danger">*</span></label>
+                            <input type="text" name="smtp_host" class="form-control font-monospace" placeholder="smtp.gmail.com" required>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label fs-13 fw-semibold">Port</label>
+                            <input type="number" name="smtp_port" class="form-control font-monospace" value="587">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fs-13 fw-semibold">Username / Email</label>
+                            <input type="text" name="smtp_username" class="form-control" placeholder="reports@company.com">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fs-13 fw-semibold">Password / App Password</label>
+                            <input type="password" name="smtp_password" class="form-control">
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Account Title / Name <span class="text-danger">*</span></label>
-                        <input type="text" name="title" class="form-control" placeholder="e.g. Operations WhatsApp or Gmail SMTP" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Task Scope</label>
+                        <label class="form-label fs-13 fw-semibold">Task Type Scope</label>
                         <select name="task_type" class="form-select">
-                            <option value="ALL">ALL Task Types</option>
+                            <option value="ALL">ALL Verification Types</option>
                             <option value="PHYSICAL">PHYSICAL Only</option>
-                            <option value="ITO">ITO Only</option>
+                            <option value="ITO">ITO (ITR) Only</option>
                             <option value="BANKING">BANKING Only</option>
                         </select>
                     </div>
-
-                    <!-- WhatsApp Specific Fields -->
-                    <div id="waFields">
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Green API Instance ID</label>
-                            <input type="text" name="green_api_instance" class="form-control" placeholder="e.g. 710722705616">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Green API Token</label>
-                            <input type="text" name="green_api_token" class="form-control font-monospace fs-12" placeholder="API Token">
-                        </div>
-                    </div>
-
-                    <!-- SMTP Specific Fields -->
-                    <div id="smtpFields" style="display:none;">
-                        <div class="row g-2 mb-3">
-                            <div class="col-8">
-                                <label class="form-label fs-13 fw-semibold text-secondary">SMTP Host</label>
-                                <input type="text" name="smtp_host" class="form-control" placeholder="smtp.gmail.com">
-                            </div>
-                            <div class="col-4">
-                                <label class="form-label fs-13 fw-semibold text-secondary">Port</label>
-                                <input type="number" name="smtp_port" class="form-control" value="465">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">SMTP Username / Email</label>
-                            <input type="text" name="smtp_username" class="form-control" placeholder="user@gmail.com">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">SMTP Password / App Password</label>
-                            <input type="password" name="smtp_password" class="form-control" placeholder="Password">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Encryption</label>
-                            <select name="smtp_encryption" class="form-select">
-                                <option value="ssl">SSL (Port 465)</option>
-                                <option value="tls">TLS (Port 587)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="is_default" value="1" id="is_default_check">
-                        <label class="form-check-label fs-13" for="is_default_check">Set as Default Account for Channel</label>
-                    </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Account</button>
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save SMTP Account</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Modal: Add Communication Template -->
-<div class="modal fade" id="newTemplateModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form action="/communication/template" method="POST">
-                <input type="hidden" name="template_id" value="0">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold">Create Notification Template</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="row g-3 mb-3">
-                        <div class="col-8">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Template Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" placeholder="e.g. Send task to Verifier" required>
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label fs-13 fw-semibold text-secondary">Channel <span class="text-danger">*</span></label>
-                            <select name="channel" class="form-select" required>
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="email">Email</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Event Trigger</label>
-                        <select name="event_trigger" class="form-select">
-                            <option value="when_assigned">When Task Assigned to Verifier</option>
-                            <option value="when_reviewed">When Case Finalized / Reviewed</option>
-                            <option value="manual">Manual Trigger Only</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Email Subject (if Channel is Email)</label>
-                        <input type="text" name="subject" class="form-control" placeholder="e.g. Verification Report - #client_name#">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Template Content / Message Body <span class="text-danger">*</span></label>
-                        <textarea name="body" rows="5" class="form-control font-monospace fs-12" placeholder="#client_name#&#10;&#10;#task_name#&#10;&#10;#Task_Fields#" required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Template</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Edit Client Route -->
-<div class="modal fade" id="clientRouteModal" tabindex="-1" aria-hidden="true">
+<!-- Modal for WhatsApp Account -->
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="/communication/client_route" method="POST">
-                <input type="hidden" name="client_id" id="route_client_id" value="0">
+        <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+            <form action="/communication/account" method="POST">
+                <input type="hidden" name="account_type" value="whatsapp">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold" id="routeModalTitle">Edit Client Communication Route</h5>
+                    <h5 class="modal-title fs-15 fw-bold">Configure Green API WhatsApp Channel</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Reporting Email</label>
-                        <input type="email" name="email" id="route_email" class="form-control" placeholder="reports@bank.com">
+                        <label class="form-label fs-13 fw-semibold">Account Label <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Primary Dispatcher" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">SMTP Mailer Override</label>
-                        <select name="smtp_account_id" id="route_smtp_id" class="form-select">
-                            <option value="0">Default System SMTP</option>
-                            {{ range .SmtpAccounts }}
-                                <option value="{{ .ID }}">{{ .AccountName }}</option>
-                            {{ end }}
-                        </select>
+                        <label class="form-label fs-13 fw-semibold">Green API Instance ID <span class="text-danger">*</span></label>
+                        <input type="text" name="green_api_instance" class="form-control font-monospace" placeholder="e.g. 1101823456" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">WhatsApp Instance Override</label>
-                        <select name="whatsapp_account_id" id="route_wa_id" class="form-select">
-                            <option value="0">Default System WhatsApp</option>
-                            {{ range .WhatsappAccounts }}
-                                <option value="{{ .ID }}">{{ .AccountName }}</option>
-                            {{ end }}
-                        </select>
+                        <label class="form-label fs-13 fw-semibold">Green API API Token <span class="text-danger">*</span></label>
+                        <input type="password" name="green_api_token" class="form-control font-monospace" placeholder="e.g. a1b2c3d4..." required>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="email_reports_enabled" id="route_reports_enabled" value="1">
-                        <label class="form-check-label fs-13" for="route_reports_enabled">Enable Automated Daily Email Reports</label>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold">Task Type Scope</label>
+                        <select name="task_type" class="form-select">
+                            <option value="ALL">ALL Verification Types</option>
+                            <option value="PHYSICAL">PHYSICAL Only</option>
+                            <option value="ITO">ITO (ITR) Only</option>
+                            <option value="BANKING">BANKING Only</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Routing</button>
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save WhatsApp Channel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Template -->
+<div class="modal fade" id="templateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+            <form action="/communication/template" method="POST">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fs-15 fw-bold">Configure Message Notification Template</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold">Delivery Channel</label>
+                        <select name="channel" class="form-select">
+                            <option value="whatsapp">WhatsApp (Green API)</option>
+                            <option value="smtp">Email (SMTP)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold">Lifecycle Event / Key <span class="text-danger">*</span></label>
+                        <input type="text" name="event_name" class="form-control font-monospace" placeholder="e.g. task_assigned, case_completed" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold">Task Type Scope</label>
+                        <select name="task_type" class="form-select">
+                            <option value="ALL">ALL Verification Types</option>
+                            <option value="PHYSICAL">PHYSICAL</option>
+                            <option value="ITO">ITO</option>
+                            <option value="BANKING">BANKING</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fs-13 fw-semibold">Message Body <span class="text-danger">*</span></label>
+                        <textarea name="template_body" class="form-control" rows="4" placeholder="Hello #applicant_name#, your verification has been assigned." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Template</button>
                 </div>
             </form>
         </div>
@@ -437,26 +584,18 @@
 </div>
 
 <script>
-function toggleAccountFields(val) {
-    if (val === 'whatsapp') {
-        document.getElementById('waFields').style.display = 'block';
-        document.getElementById('smtpFields').style.display = 'none';
-    } else {
-        document.getElementById('waFields').style.display = 'none';
-        document.getElementById('smtpFields').style.display = 'block';
+    function openSmtpModal() {
+        const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('smtpModal'));
+        m.show();
     }
-}
-
-function openClientRouteModal(id, name, email, enabled, smtpId, waId) {
-    document.getElementById('route_client_id').value = id;
-    document.getElementById('routeModalTitle').innerText = 'Route: ' + name;
-    document.getElementById('route_email').value = email;
-    document.getElementById('route_reports_enabled').checked = (enabled === 1);
-    document.getElementById('route_smtp_id').value = smtpId;
-    document.getElementById('route_wa_id').value = waId;
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('clientRouteModal'));
-    modal.show();
-}
+    function openWhatsAppModal() {
+        const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('whatsappModal'));
+        m.show();
+    }
+    function openTemplateModal() {
+        const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('templateModal'));
+        m.show();
+    }
 </script>
 
 {{ template "footer.html" . }}

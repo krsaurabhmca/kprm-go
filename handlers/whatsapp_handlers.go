@@ -8,16 +8,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"kprm2/database"
 	"kprm2/middleware"
-	"kprm2/models"
 	"kprm2/utils"
 )
+
+type WhatsAppAccountView struct {
+	ID         int
+	Title      string
+	InstanceID string
+	IsDefault  int
+	Status     string
+}
 
 // ShowWhatsAppChat renders the live WhatsApp suite
 func ShowWhatsAppChat(c *gin.Context) {
 	data := middleware.GetBaseTemplateData(c, "WhatsApp Live Chat Suite", "/whatsapp")
 	db := database.GetDB()
 
-	var accounts []models.CommunicationAccount
+	var accounts []WhatsAppAccountView
 	type VerifierContact struct {
 		ID       int
 		Username string
@@ -27,12 +34,22 @@ func ShowWhatsAppChat(c *gin.Context) {
 	var contacts []VerifierContact
 
 	if db != nil {
-		rows, err := db.Query("SELECT id, account_type, title, config_json, is_default, status, created_at FROM communication_accounts WHERE account_type = 'whatsapp' ORDER BY is_default DESC, id ASC")
+		rows, err := db.Query("SELECT id, title, config_json, is_default, status FROM communication_accounts WHERE account_type = 'whatsapp' ORDER BY is_default DESC, id ASC")
 		if err == nil {
 			defer rows.Close()
 			for rows.Next() {
-				var a models.CommunicationAccount
-				_ = rows.Scan(&a.ID, &a.Channel, &a.AccountName, &a.ConfigJSON, &a.IsDefault, &a.Status, &a.CreatedAt)
+				var a WhatsAppAccountView
+				var cfgStr string
+				_ = rows.Scan(&a.ID, &a.Title, &cfgStr, &a.IsDefault, &a.Status)
+				var cfg map[string]interface{}
+				_ = json.Unmarshal([]byte(cfgStr), &cfg)
+				if inst, ok := cfg["green_api_instance"].(string); ok && inst != "" {
+					a.InstanceID = inst
+				} else if inst, ok := cfg["instance_id"].(string); ok && inst != "" {
+					a.InstanceID = inst
+				} else {
+					a.InstanceID = "Instance #" + strconv.Itoa(a.ID)
+				}
 				accounts = append(accounts, a)
 			}
 		}

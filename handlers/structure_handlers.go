@@ -25,6 +25,27 @@ type StructureListItem struct {
 
 // ListStructures displays dynamic client schemas
 func ListStructures(c *gin.Context) {
+	// Support ?delete=ID
+	if delIDStr := c.Query("delete"); delIDStr != "" {
+		delID, _ := strconv.Atoi(delIDStr)
+		if delID > 0 {
+			session := sessions.Default(c)
+			db := database.GetDB()
+			if db != nil {
+				_, _ = db.Exec("DELETE FROM structure_columns WHERE structure_id = ?", delID)
+				_, err := db.Exec("DELETE FROM client_structures WHERE id = ?", delID)
+				if err != nil {
+					session.Set("error", "Could not delete structure. It may be in use by existing cases.")
+				} else {
+					session.Set("success", "Structure deleted successfully.")
+				}
+				_ = session.Save()
+			}
+			c.Redirect(http.StatusFound, "/structures")
+			return
+		}
+	}
+
 	data := middleware.GetBaseTemplateData(c, "Client Form Structures", "/structures")
 	db := database.GetDB()
 
@@ -71,6 +92,28 @@ func ListStructures(c *gin.Context) {
 // SaveStructure creates a new dynamic structure
 func SaveStructure(c *gin.Context) {
 	session := sessions.Default(c)
+	action := c.PostForm("action")
+
+	// Support action=delete matching structures.php
+	if action == "delete" {
+		delID, _ := strconv.Atoi(c.PostForm("delete_id"))
+		if delID > 0 {
+			db := database.GetDB()
+			if db != nil {
+				_, _ = db.Exec("DELETE FROM structure_columns WHERE structure_id = ?", delID)
+				_, err := db.Exec("DELETE FROM client_structures WHERE id = ?", delID)
+				if err != nil {
+					session.Set("error", "Could not delete structure. It may be in use by existing cases.")
+				} else {
+					session.Set("success", "Structure deleted successfully.")
+				}
+				_ = session.Save()
+			}
+		}
+		c.Redirect(http.StatusFound, "/structures")
+		return
+	}
+
 	clientID, _ := strconv.Atoi(c.PostForm("client_id"))
 	name := strings.TrimSpace(c.PostForm("structure_name"))
 	if name == "" {

@@ -665,8 +665,18 @@ func DeleteTaskMetaField(c *gin.Context) {
 // ToggleTaskMetaFlag toggles show_in_details or send_in_message
 func ToggleTaskMetaFlag(c *gin.Context) {
 	taskID, _ := strconv.Atoi(c.DefaultQuery("task_id", c.PostForm("task_id")))
+	if taskID == 0 {
+		taskID, _ = strconv.Atoi(c.DefaultQuery("id", c.PostForm("id")))
+	}
 	metaID, _ := strconv.Atoi(c.DefaultQuery("meta_id", c.PostForm("meta_id")))
 	flag := c.DefaultQuery("flag", c.PostForm("flag"))
+
+	action := c.PostForm("action")
+	if action == "toggle_show_in_details" {
+		flag = "show_in_details"
+	} else if action == "toggle_send_in_message" {
+		flag = "send_in_message"
+	}
 
 	db := database.GetDB()
 	if flag == "show_in_details" {
@@ -786,7 +796,7 @@ func HandleTaskMetaPost(c *gin.Context) {
 		DeleteTaskRemark(c)
 	case "delete_meta":
 		DeleteTaskMetaField(c)
-	case "toggle_field":
+	case "toggle_field", "toggle_show_in_details", "toggle_send_in_message":
 		ToggleTaskMetaFlag(c)
 	default:
 		SaveTaskMetaField(c)

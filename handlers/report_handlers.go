@@ -40,6 +40,27 @@ type ReportCellMapping struct {
 
 // ManageReports displays reports hub and templates list
 func ManageReports(c *gin.Context) {
+	// Support ?delete=ID matching manage_reports.php
+	if delIDStr := c.Query("delete"); delIDStr != "" {
+		delID, _ := strconv.Atoi(delIDStr)
+		if delID > 0 {
+			session := sessions.Default(c)
+			db := database.GetDB()
+			if db != nil {
+				_, _ = db.Exec("DELETE FROM report_matrix_cells WHERE template_id = ?", delID)
+				_, err := db.Exec("DELETE FROM report_templates WHERE id = ?", delID)
+				if err != nil {
+					session.Set("error", "Failed to delete report template.")
+				} else {
+					session.Set("success", "Report template deleted successfully.")
+				}
+				_ = session.Save()
+			}
+			c.Redirect(http.StatusFound, "/reports")
+			return
+		}
+	}
+
 	data := middleware.GetBaseTemplateData(c, "Manage Report Templates", "/reports")
 	db := database.GetDB()
 

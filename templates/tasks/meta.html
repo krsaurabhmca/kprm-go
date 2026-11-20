@@ -1,288 +1,529 @@
 {{ template "header.html" . }}
 
-<div class="content-body p-4 wizard-container">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+<style>
+    .task-meta-shell {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .task-meta-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 1.5rem;
+    }
+    .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .panel-head h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .compact-meta-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.81rem;
+    }
+    .compact-meta-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .compact-meta-table td {
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+    .compact-meta-table tr:hover td {
+        background: #f8fafc;
+    }
+    .meta-compact-btn {
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.2rem 0.55rem;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+    }
+    .meta-compact-btn--success {
+        background: #ecfdf5;
+        color: #047857;
+        border-color: #a7f3d0;
+    }
+    .meta-compact-btn--primary {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-color: #bfdbfe;
+    }
+    .meta-compact-btn--muted {
+        background: #f1f5f9;
+        color: #64748b;
+        border-color: #cbd5e1;
+    }
+    .tips-note {
+        font-size: 0.82rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+    }
+    .tips-note code {
+        background: #eff6ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+        border-radius: 4px;
+        padding: 0.1rem 0.35rem;
+        font-family: monospace;
+    }
+    .accordion {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    .accordion-item {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+    .accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1.1rem;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    .accordion-content {
+        display: block;
+        padding: 0 1.1rem 1rem;
+    }
+    .remark-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.65rem;
+    }
+    .remark-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem 0.85rem;
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+    .remark-item__text {
+        white-space: pre-wrap;
+        flex: 1;
+        color: #334155;
+        font-size: 0.84rem;
+        line-height: 1.5;
+    }
+    .remark-item__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .task-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(2px);
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        padding: 1rem;
+    }
+    .task-modal-box {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        width: min(100%, 680px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    @media (max-width: 980px) {
+        .task-meta-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="wizard-container task-meta-shell">
+    <div class="d-flex justify-content-between items-center gap-1 mb-3 pb-2 border-bottom flex-wrap">
         <div>
-            <div class="d-flex align-items-center gap-2">
-                <h1 class="h3 fw-bold text-dark mb-0">Blueprint: {{ .Task.TaskName }}</h1>
-                <span class="badge {{ if eq .Task.TaskType "PHYSICAL" }}badge-success{{ else if eq .Task.TaskType "ITO" }}badge-primary{{ else }}badge-warning{{ end }}">{{ .Task.TaskType }}</span>
-            </div>
-            <p class="text-secondary small mb-0 mt-1">Configure verification input fields, role RBAC permissions, and automated remark templates</p>
+            <h1 class="page-title d-flex items-center gap-2 flex-wrap m-0" style="font-size:1.35rem; font-weight:800;">
+                Configure Task: {{ .Task.TaskName }}
+                <span class="badge" style="background:#eff6ff; color:#2563eb; font-size:0.75rem; border:1px solid #bfdbfe;">
+                    {{ .Task.TaskType }}
+                </span>
+            </h1>
+            <p class="page-subtitle" style="margin:0.2rem 0 0; color:#64748b; font-size:0.84rem;">
+                Configure input fields and standard remarks for this verification task.
+            </p>
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#metaFieldModal" onclick="openCreateFieldModal()">
-                <i class="bi bi-plus-lg me-1"></i> Add Input Field
-            </button>
-            <button type="button" class="btn btn-outline-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#remarkModal" onclick="openCreateRemarkModal()">
-                <i class="bi bi-chat-left-text me-1"></i> Add Remark Template
-            </button>
-            <a href="/tasks/blueprints" class="btn btn-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i> Back to Blueprints
+        <div>
+            <a href="/tasks/blueprints" class="btn btn-secondary btn-sm d-inline-flex items-center gap-1" style="font-size:0.82rem; font-weight:600; text-decoration:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Back to Tasks
             </a>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Left Column: Input Fields & RBAC -->
-        <div class="col-12 col-xl-7">
-            <div class="card overflow-hidden p-0 mb-4">
-                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fs-14 fw-bold text-dark mb-0">
-                        <i class="bi bi-list-check me-2 text-primary"></i> Verification Input Fields ({{ len .MetaFields }})
-                    </h5>
-                    <span class="text-muted fs-11">Auto-synced with #tags#</span>
+    <div class="task-meta-grid">
+        <!-- Left: Input Fields (Meta) -->
+        <div>
+            <div class="card p-3" style="background:#ffffff; border-radius:12px; border:1px solid var(--border-color);">
+                <div class="panel-head">
+                    <div>
+                        <h3>Input Fields (Meta)</h3>
+                        <p style="margin:0.15rem 0 0; color:#64748b; font-size:0.75rem;">Manage field attributes and verification visibility.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openMetaModal()">+ Add Field</button>
                 </div>
-                <div class="table-responsive">
-                    <table class="table styled-table table-hover align-middle mb-0 fs-13">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-3">Field Name</th>
-                                <th>Type</th>
-                                <th>Tag</th>
-                                <th class="text-center">Req</th>
-                                <th class="text-center">In Table</th>
-                                <th class="text-center">In Msg</th>
-                                <th class="text-end pe-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{ range .MetaFields }}
-                            <tr>
-                                <td class="ps-3 fw-bold text-dark">
-                                    {{ .FieldName }}
-                                    {{ if .ListOptions.Valid }}
-                                        {{ if .ListOptions.String }}
-                                            <div class="text-muted fs-11 fw-normal">Opts: {{ .ListOptions.String }}</div>
+
+                {{ if not .MetaFields }}
+                    <p style="color:#64748b; font-size:0.85rem; padding:1.5rem 0; text-align:center;">No fields configured yet. Click "+ Add Field" above.</p>
+                {{ else }}
+                    <div style="overflow-x:auto;">
+                        <table class="compact-meta-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:36%;">Field Name</th>
+                                    <th style="width:16%;">Type</th>
+                                    <th style="width:18%; text-align:center;">Task Table</th>
+                                    <th style="width:14%; text-align:center;">Message</th>
+                                    <th style="width:16%; text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .MetaFields }}
+                                <tr>
+                                    <td>
+                                        <div style="font-weight:700; color:#2563eb; font-size:0.82rem; line-height:1.2;">
+                                            {{ .FieldName }}
+                                        </div>
+                                        {{ if .VariableTag.Valid }}
+                                            {{ if .VariableTag.String }}
+                                                <span style="font-size:0.68rem; color:#64748b; font-family:monospace;">{{ .VariableTag.String }}</span>
+                                            {{ end }}
                                         {{ end }}
-                                    {{ end }}
-                                </td>
-                                <td><span class="badge badge-secondary fs-10">{{ .DataType }}</span></td>
-                                <td class="font-monospace text-primary fs-11">{{ if .VariableTag.Valid }}{{ .VariableTag.String }}{{ else }}-{{ end }}</td>
-                                <td class="text-center">
-                                    {{ if eq .IsMandatory 1 }}
-                                        <span class="badge badge-danger fs-10">Yes</span>
-                                    {{ else }}
-                                        <span class="badge badge-secondary fs-10">No</span>
-                                    {{ end }}
-                                </td>
-                                <td class="text-center">
-                                    <form action="/tasks/meta/toggle" method="POST" style="display:inline;">
-                                        <input type="hidden" name="task_id" value="{{ $.TaskID }}">
-                                        <input type="hidden" name="meta_id" value="{{ .ID }}">
-                                        <input type="hidden" name="flag" value="show_in_details">
-                                        <button type="submit" class="btn btn-sm py-0 px-2 {{ if eq .ShowInDetails 1 }}btn-success{{ else }}btn-outline-secondary{{ end }}" style="font-size: 11px;">
-                                            {{ if eq .ShowInDetails 1 }}<i class="bi bi-eye"></i> Show{{ else }}<i class="bi bi-eye-slash"></i> Hide{{ end }}
-                                        </button>
-                                    </form>
-                                </td>
-                                <td class="text-center">
-                                    <form action="/tasks/meta/toggle" method="POST" style="display:inline;">
-                                        <input type="hidden" name="task_id" value="{{ $.TaskID }}">
-                                        <input type="hidden" name="meta_id" value="{{ .ID }}">
-                                        <input type="hidden" name="flag" value="send_in_message">
-                                        <button type="submit" class="btn btn-sm py-0 px-2 {{ if eq .SendInMessage 1 }}btn-primary{{ else }}btn-outline-secondary{{ end }}" style="font-size: 11px;">
-                                            {{ if eq .SendInMessage 1 }}<i class="bi bi-chat-check"></i> Yes{{ else }}<i class="bi bi-chat-x"></i> No{{ end }}
-                                        </button>
-                                    </form>
-                                </td>
-                                <td class="text-end pe-3">
-                                    <form action="/tasks/meta/field/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this verification field?');">
-                                        <input type="hidden" name="task_id" value="{{ $.TaskID }}">
-                                        <input type="hidden" name="meta_id" value="{{ .ID }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Delete Field">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            {{ else }}
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted fst-italic">No input fields configured. Click "Add Input Field" or create Remarks with #tags#.</td>
-                            </tr>
-                            {{ end }}
-                        </tbody>
-                    </table>
-                </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding:0.15rem 0.4rem; border:1px solid #cbd5e1;">{{ .DataType }}</span>
+                                        {{ if eq .IsMandatory 1 }}
+                                            <span class="badge" style="background:#fee2e2; color:#b91c1c; font-size:0.65rem; padding:0.1rem 0.3rem;" title="Mandatory">*</span>
+                                        {{ end }}
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <form action="/tasks/meta/toggle" method="POST" style="margin:0; display:inline;">
+                                            <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                            <input type="hidden" name="meta_id" value="{{ .ID }}">
+                                            <input type="hidden" name="flag" value="show_in_details">
+                                            <button type="submit" class="meta-compact-btn {{ if eq .ShowInDetails 1 }}meta-compact-btn--success{{ else }}meta-compact-btn--muted{{ end }}" title="Toggle visibility in verification tables">
+                                                {{ if eq .ShowInDetails 1 }}✓ Visible{{ else }}Hidden{{ end }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td style="text-align:center;">
+                                        <form action="/tasks/meta/toggle" method="POST" style="margin:0; display:inline;">
+                                            <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                            <input type="hidden" name="meta_id" value="{{ .ID }}">
+                                            <input type="hidden" name="flag" value="send_in_message">
+                                            <button type="submit" class="meta-compact-btn {{ if eq .SendInMessage 1 }}meta-compact-btn--primary{{ else }}meta-compact-btn--muted{{ end }}" title="Toggle send in WhatsApp message">
+                                                {{ if eq .SendInMessage 1 }}Yes{{ else }}No{{ end }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:0.25rem;">
+                                            <button type="button" class="btn btn-secondary btn-xs"
+                                                style="padding:0.2rem 0.5rem; font-size:0.74rem; border-radius:4px;"
+                                                onclick="editMetaField({{ .ID }}, '{{ .FieldName }}', '{{ .DataType }}', '{{ if .VariableTag.Valid }}{{ .VariableTag.String }}{{ end }}', {{ .IsMandatory }}, {{ .ShowInDetails }}, {{ .SendInMessage }}, '{{ if .ListOptions.Valid }}{{ .ListOptions.String }}{{ end }}')">
+                                                Edit
+                                            </button>
+                                            <form action="/tasks/meta/field/delete" method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Delete this field?');">
+                                                <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                                <input type="hidden" name="meta_id" value="{{ .ID }}">
+                                                <button type="submit" class="btn btn-secondary btn-xs"
+                                                    style="padding:0.2rem 0.5rem; font-size:0.74rem; border-radius:4px; color:#b91c1c;"
+                                                    title="Delete Field">&times;</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                {{ end }}
             </div>
         </div>
 
-        <!-- Right Column: Standard Remarks & Automation -->
-        <div class="col-12 col-xl-5">
-            <div class="card p-0 overflow-hidden mb-4">
-                <div class="card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title fs-14 fw-bold text-dark mb-0">
-                        <i class="bi bi-chat-quote me-2 text-success"></i> Standard Remark Templates ({{ len .Remarks }})
-                    </h5>
-                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fs-11" data-bs-toggle="modal" data-bs-target="#remarkModal" onclick="openCreateRemarkModal()">
-                        <i class="bi bi-plus-lg me-1"></i> Add
-                    </button>
+        <!-- Right: Remarks Accordion -->
+        <div>
+            <div class="card p-3" style="background:#ffffff; border-radius:12px; border:1px solid var(--border-color);">
+                <div class="panel-head">
+                    <div>
+                        <h3>Standard Remarks</h3>
+                        <p style="margin:0.15rem 0 0; color:#64748b; font-size:0.75rem;">Structured outcome observations.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="openRemarkModal()">+ Add Remark</button>
                 </div>
-                <div class="list-group list-group-flush fs-13">
-                    {{ range .Remarks }}
-                    <div class="list-group-item p-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge {{ if eq .RemarkType "Positive" }}badge-success{{ else if eq .RemarkType "Negative" }}badge-danger{{ else }}badge-warning{{ end }} text-uppercase">
-                                {{ .RemarkType }} Outcome
-                            </span>
-                            <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="btn btn-sm btn-link text-primary p-0 fs-12 text-decoration-none fw-semibold" onclick="editRemarkTemplate({{ .ID }}, '{{ .RemarkType }}', this)" title="Edit Template">
-                                    <i class="bi bi-pencil-square me-1"></i> Edit
-                                </button>
-                                <span class="text-muted">|</span>
-                                <form action="/tasks/meta/remark/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this remark template?');">
-                                    <input type="hidden" name="task_id" value="{{ $.TaskID }}">
-                                    <input type="hidden" name="remark_id" value="{{ .ID }}">
-                                    <button type="submit" class="btn btn-sm btn-link text-danger p-0 fs-12 text-decoration-none" title="Delete">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
-                                </form>
+
+                <div class="tips-note">
+                    <strong>Tip:</strong> Use <code>#tags#</code> in your remarks (like <code>#applicant_name#</code>). The system will automatically auto-generate input fields for them.
+                </div>
+
+                {{ if not .Remarks }}
+                    <p style="color:#64748b; font-size:0.85rem; padding:1.5rem 0; text-align:center;">No remarks configured yet.</p>
+                {{ else }}
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">
+                                Remarks List ({{ len .Remarks }})
+                            </div>
+                            <div class="accordion-content">
+                                <ul class="remark-list">
+                                    {{ range .Remarks }}
+                                    <li class="remark-item">
+                                        <div style="flex:1;">
+                                            <span class="badge" style="background:#eff6ff; color:#1d4ed8; font-size:0.68rem; margin-bottom:0.25rem; display:inline-block;">{{ .RemarkType }}</span>
+                                            <div class="remark-item__text">{{ .RemarkText }}</div>
+                                        </div>
+                                        <div class="remark-item__actions">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem; font-size:0.74rem;" onclick="editRemarkTemplate({{ .ID }}, '{{ .RemarkType }}', '{{ .RemarkText }}')">
+                                                Edit
+                                            </button>
+                                            <form action="/tasks/meta/remark/delete" method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Delete this remark?');">
+                                                <input type="hidden" name="task_id" value="{{ $.TaskID }}">
+                                                <input type="hidden" name="remark_id" value="{{ .ID }}">
+                                                <button type="submit" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem; font-size:0.74rem; color:#b91c1c;">&times;</button>
+                                            </form>
+                                        </div>
+                                    </li>
+                                    {{ end }}
+                                </ul>
                             </div>
                         </div>
-                        <div id="remark_text_raw_{{ .ID }}" style="display:none;">{{ .RemarkText }}</div>
-                        <div class="p-2 bg-light rounded border text-secondary font-monospace fs-11" style="white-space: pre-wrap;">{{ .RemarkText }}</div>
                     </div>
-                    {{ else }}
-                    <div class="p-4 text-center text-muted fst-italic">No predefined remarks. Click "Add Remark Template" above.</div>
-                    {{ end }}
-                </div>
-                <div class="card-footer bg-light p-3 border-top">
-                    <div class="d-flex align-items-start gap-2 fs-12 text-muted">
-                        <i class="bi bi-info-circle-fill text-primary mt-1"></i>
-                        <div>
-                            <strong>Dynamic #tags# feature:</strong> Writing tags such as <code>#applicant_name#</code> or <code>#address#</code> in your remarks will auto-generate them as input fields!
-                        </div>
-                    </div>
-                </div>
+                {{ end }}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Field Modal -->
-<div class="modal fade" id="metaFieldModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="/tasks/meta/field" method="POST" id="fieldForm">
-                <input type="hidden" name="task_id" value="{{ .TaskID }}">
-                <input type="hidden" name="meta_id" id="field_meta_id" value="0">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold" id="fieldModalTitle">Add Verification Field</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Meta Modal (Add / Edit) -->
+<div id="metaModal" class="task-modal">
+    <div class="task-modal-box">
+        <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 id="metaModalTitle" style="margin:0; font-size:1.1rem; font-weight:700;">+ Add New Field</h3>
+                <p style="margin:0.15rem 0 0; font-size:0.78rem; color:#64748b;">Configure task input field properties.</p>
+            </div>
+            <button type="button" onclick="closeMetaModal()" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#64748b;">&times;</button>
+        </div>
+        <form action="/tasks/meta/field" method="POST" style="padding:1.25rem;">
+            <input type="hidden" name="task_id" value="{{ .TaskID }}">
+            <input type="hidden" name="meta_id" id="modalMetaId" value="0">
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Field Name</label>
+                    <input type="text" name="field_name" id="modalFieldName" class="form-control" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border-color); border-radius:6px;" required>
                 </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Field Label / Name <span class="text-danger">*</span></label>
-                        <input type="text" name="field_name" id="field_name" class="form-control" placeholder="e.g. Electricity Meter Number" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Variable Tag (for auto-filling remarks)</label>
-                        <input type="text" name="variable_tag" id="field_tag" class="form-control font-monospace" placeholder="e.g. #meter_no#">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Input Data Type <span class="text-danger">*</span></label>
-                        <select name="data_type" id="field_type" class="form-select" required>
-                            <option value="Text">Text (Single Line)</option>
-                            <option value="Number">Number / Amount</option>
-                            <option value="Date">Date</option>
-                            <option value="File">Photo / Document Upload</option>
-                            <option value="List">Dropdown Selection</option>
-                            <option value="Boolean">Yes / No Toggle</option>
-                            <option value="Long text">Long Remarks (Textarea)</option>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Data Type</label>
+                    <select name="data_type" id="modalDataType" class="form-control" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                        <option value="Text">Text</option>
+                        <option value="Number">Number</option>
+                        <option value="Date">Date</option>
+                        <option value="Boolean">Boolean</option>
+                        <option value="List">List</option>
+                        <option value="Document">Document</option>
+                        <option value="Function">Function</option>
+                        <option value="Financial_Table">Financial Table</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Variable Tag (e.g. #applicant_name#)</label>
+                <input type="text" name="variable_tag" id="modalVariableTag" class="form-control" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="#field_tag#">
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">List Options / Formula (comma separated)</label>
+                <input type="text" name="list_options" id="modalListOptions" class="form-control" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="Option1, Option2">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; cursor:pointer;">
+                    <input type="checkbox" name="is_mandatory" id="modalIsMandatory" value="1">
+                    <span>Mandatory Field</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; cursor:pointer;">
+                    <input type="checkbox" name="show_in_details" id="modalShowInDetails" value="1" checked>
+                    <span>Show in Task Table</span>
+                </label>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; cursor:pointer;">
+                    <input type="checkbox" name="send_in_message" id="modalSendInMessage" value="1" checked>
+                    <span style="font-weight:700; color:#2563eb;">Send With Message (#Task_Fields#)</span>
+                </label>
+                <div style="font-size:0.72rem; color:#64748b; margin-top:0.2rem; margin-left:1.5rem;">
+                    Sent in WhatsApp dispatch notifications when non-empty.
+                </div>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; margin-bottom:0.4rem; text-transform:uppercase; color:#475569;">Role-Based Access (RBAC)</label>
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                    {{ range .Roles }}
+                    <div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:0.5rem 0.75rem; flex:1; min-width:120px;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; margin-bottom:0.25rem;">{{ .RoleName }}</label>
+                        <select name="rbac_{{ .ID }}" style="width:100%; border:1px solid var(--border-color); border-radius:4px; padding:0.25rem 0.4rem; font-size:0.78rem;">
+                            <option value="Write">Write</option>
+                            <option value="Read-Only">Read-Only</option>
+                            <option value="Hidden">Hidden</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Dropdown Options (if Type is List)</label>
-                        <input type="text" name="list_options" id="field_options" class="form-control" placeholder="Option 1, Option 2, Option 3">
-                    </div>
-                    <div class="d-flex gap-3 mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_mandatory" id="field_mandatory" value="1">
-                            <label class="form-check-label fs-13" for="field_mandatory">Mandatory Field</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="show_in_details" id="field_details" value="1">
-                            <label class="form-check-label fs-13" for="field_details">Show in Table</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="send_in_message" id="field_message" value="1" checked>
-                            <label class="form-check-label fs-13" for="field_message">Include in WhatsApp</label>
-                        </div>
-                    </div>
+                    {{ end }}
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold">Save Field</button>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem; border-top:1px solid var(--border-color); padding-top:1rem;">
+                <button type="button" onclick="closeMetaModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="metaSubmitBtn">Save Field</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- Add/Edit Remark Modal -->
-<div class="modal fade" id="remarkModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <form action="/tasks/meta/remark" method="POST">
-                <input type="hidden" name="task_id" value="{{ .TaskID }}">
-                <input type="hidden" name="remark_id" id="remark_id" value="0">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fs-15 fw-bold" id="remarkModalTitle">Create Standard Remark Template</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Target Verification Outcome <span class="text-danger">*</span></label>
-                        <select name="remark_type" id="modal_remark_type" class="form-select" required>
-                            <option value="Positive">Positive</option>
-                            <option value="Negative">Negative</option>
-                            <option value="CNV">CNV (Could Not Verify)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fs-13 fw-semibold text-secondary">Remark Text (Use #tags# for auto-fill) <span class="text-danger">*</span></label>
-                        <textarea name="remark_text" id="modal_remark_text" rows="5" class="form-control font-monospace fs-12" placeholder="e.g. Field executive met with #met_with# at address #address#. Staying since #years# years." required></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" id="remarkSubmitBtn" class="btn btn-primary btn-sm px-4 fw-bold">Save Remark</button>
-                </div>
-            </form>
+<!-- Remark Modal (Add / Edit) -->
+<div id="remarkModal" class="task-modal">
+    <div class="task-modal-box" style="width:min(100%, 540px);">
+        <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 id="remarkModalTitle" style="margin:0; font-size:1.1rem; font-weight:700;">+ Add Remark Template</h3>
+                <p style="margin:0.15rem 0 0; font-size:0.78rem; color:#64748b;">Pre-fill observation remarks with variable tags.</p>
+            </div>
+            <button type="button" onclick="closeRemarkModal()" style="background:none; border:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#64748b;">&times;</button>
         </div>
+        <form action="/tasks/meta/remark" method="POST" style="padding:1.25rem;">
+            <input type="hidden" name="task_id" value="{{ .TaskID }}">
+            <input type="hidden" name="remark_id" id="modalRemarkId" value="0">
+
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Remark Outcome Type</label>
+                <select name="remark_type" id="modalRemarkType" class="form-control" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border-color); border-radius:6px;" required>
+                    <option value="Positive">Positive</option>
+                    <option value="Negative">Negative</option>
+                    <option value="CNV">CNV</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <label style="display:block; font-size:0.8rem; font-weight:700; margin-bottom:0.35rem;">Remark Template Text</label>
+                <textarea name="remark_text" id="modalRemarkText" rows="4" class="form-control" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--border-color); border-radius:6px;" placeholder="e.g. Visited the given address. Met applicant #applicant_name# who verified identity." required></textarea>
+                <div style="font-size:0.72rem; color:#64748b; margin-top:0.25rem;">Use #tags# to automatically create input fields upon saving.</div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.5rem; border-top:1px solid var(--border-color); padding-top:1rem;">
+                <button type="button" onclick="closeRemarkModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="remarkSubmitBtn">Save Remark</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-function openCreateFieldModal() {
-    document.getElementById('field_meta_id').value = '0';
-    document.getElementById('fieldModalTitle').innerText = 'Add Verification Field';
-    document.getElementById('field_name').value = '';
-    document.getElementById('field_tag').value = '';
-    document.getElementById('field_type').value = 'Text';
-    document.getElementById('field_options').value = '';
-    document.getElementById('field_mandatory').checked = false;
-    document.getElementById('field_details').checked = false;
-    document.getElementById('field_message').checked = true;
-}
+    function openMetaModal() {
+        document.getElementById('metaModalTitle').innerText = "+ Add New Field";
+        document.getElementById('modalMetaId').value = "0";
+        document.getElementById('modalFieldName').value = "";
+        document.getElementById('modalDataType').value = "Text";
+        document.getElementById('modalVariableTag').value = "";
+        document.getElementById('modalListOptions').value = "";
+        document.getElementById('modalIsMandatory').checked = false;
+        document.getElementById('modalShowInDetails').checked = true;
+        document.getElementById('modalSendInMessage').checked = true;
+        document.getElementById('metaSubmitBtn').innerText = "Create Field";
+        document.getElementById('metaModal').style.display = 'flex';
+    }
 
-function openCreateRemarkModal() {
-    document.getElementById('remark_id').value = '0';
-    document.getElementById('remarkModalTitle').innerText = 'Create Standard Remark Template';
-    document.getElementById('modal_remark_type').value = 'Positive';
-    document.getElementById('modal_remark_text').value = '';
-    document.getElementById('remarkSubmitBtn').innerText = 'Save Remark';
-}
+    function editMetaField(id, name, type, tag, mandatory, showInTable, sendInMsg, listOpts) {
+        document.getElementById('metaModalTitle').innerText = "Edit Field: " + name;
+        document.getElementById('modalMetaId').value = id;
+        document.getElementById('modalFieldName').value = name;
+        document.getElementById('modalDataType').value = type;
+        document.getElementById('modalVariableTag').value = tag;
+        document.getElementById('modalListOptions').value = listOpts;
+        document.getElementById('modalIsMandatory').checked = (mandatory === 1);
+        document.getElementById('modalShowInDetails').checked = (showInTable === 1);
+        document.getElementById('modalSendInMessage').checked = (sendInMsg === 1);
+        document.getElementById('metaSubmitBtn').innerText = "Update Field";
+        document.getElementById('metaModal').style.display = 'flex';
+    }
 
-function editRemarkTemplate(id, type, btn) {
-    document.getElementById('remark_id').value = id;
-    document.getElementById('remarkModalTitle').innerText = 'Edit Standard Remark Template';
-    document.getElementById('modal_remark_type').value = type;
-    const rawTextEl = document.getElementById('remark_text_raw_' + id);
-    document.getElementById('modal_remark_text').value = rawTextEl ? rawTextEl.innerText : '';
-    document.getElementById('remarkSubmitBtn').innerText = 'Update Remark';
-    const modal = new bootstrap.Modal(document.getElementById('remarkModal'));
-    modal.show();
-}
+    function closeMetaModal() {
+        document.getElementById('metaModal').style.display = 'none';
+    }
+
+    function openRemarkModal() {
+        document.getElementById('remarkModalTitle').innerText = "+ Add Remark Template";
+        document.getElementById('modalRemarkId').value = "0";
+        document.getElementById('modalRemarkType').value = "Positive";
+        document.getElementById('modalRemarkText').value = "";
+        document.getElementById('remarkSubmitBtn').innerText = "Add Remark";
+        document.getElementById('remarkModal').style.display = 'flex';
+    }
+
+    function editRemarkTemplate(id, type, text) {
+        document.getElementById('remarkModalTitle').innerText = "Edit Remark Template";
+        document.getElementById('modalRemarkId').value = id;
+        document.getElementById('modalRemarkType').value = type;
+        document.getElementById('modalRemarkText').value = text;
+        document.getElementById('remarkSubmitBtn').innerText = "Update Remark";
+        document.getElementById('remarkModal').style.display = 'flex';
+    }
+
+    function closeRemarkModal() {
+        document.getElementById('remarkModal').style.display = 'none';
+    }
+
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('task-modal')) {
+            e.target.style.display = 'none';
+        }
+    });
 </script>
 
 {{ template "footer.html" . }}
